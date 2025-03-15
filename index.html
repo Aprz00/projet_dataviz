@@ -225,7 +225,7 @@ function getColor(prix) {
            prix > 2000 ? '#FD8D3C' :
            prix > 1500 ? '#FEB24C' :
            prix >= 1000 ? '#FED976' :
-                          '#31a354';
+                          '#808080'; // Correction : utiliser gris pour données indisponibles
 }
 
 // Carte 2D (Leaflet)
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Charger les prix des communes
         let communeRows = communeCsvText.split("\n").map(row => row.split(";"));
         communeRows.forEach(row => {
-            let code_commune = row[0].trim();
+            let code_commune = row[0].trim().padStart(5, '0'); // Normalisation à 5 chiffres
             let prix = parseFloat(row[1]);
             if (!isNaN(prix)) prixCommuneData[code_commune] = prix;
         });
@@ -347,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return dep === codeDepartement;
                 },
                 style: function (feature) {
-                    let codeCommune = feature.properties.code;
+                    let codeCommune = feature.properties.codgeo; // Correction : utiliser codgeo
                     let prix = prixCommuneData[codeCommune];
                     let fillColor = prix !== undefined ? getColor(prix) : '#808080';
                     return {
@@ -359,9 +359,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     };
                 },
                 onEachFeature: function (feature, layer) {
-                    let codeCommune = feature.properties.code;
+                    let codeCommune = feature.properties.codgeo; // Correction : utiliser codgeo
                     let prix = prixCommuneData[codeCommune] ? prixCommuneData[codeCommune].toFixed(1) + " €/m²" : "Donnée non disponible";
-                    let communeName = feature.properties.nom || 'Nom non défini';
+                    let communeName = feature.properties.libgeo || 'Nom non défini'; // Correction : utiliser libgeo
                     let popupContent = `<b>Commune : ${communeName}</b><br>Code : ${codeCommune}<br>Prix moyen : ${prix}`;
                     let tooltipContent = `${communeName}<br>${prix}`;
 
@@ -488,7 +488,7 @@ function initCesium() {
     ]).then(([csvText, communeGeojsonData, countriesGeojsonData, deptGeojsonData]) => {
         let rows = csvText.split("\n").map(row => row.split(";"));
         rows.forEach(row => {
-            let code_commune = row[0].trim();
+            let code_commune = row[0].trim().padStart(5, '0'); // Normalisation à 5 chiffres
             let prix = parseFloat(row[1]);
             if (!isNaN(prix)) prixCommuneData[code_commune] = prix;
         });
@@ -538,7 +538,7 @@ function initCesium() {
                 var entity = allCommuneEntities[i];
                 var dep = entity.properties.dep ? entity.properties.dep.toString().padStart(2, '0') : null;
                 depValues.add(dep);
-                var code = entity.properties.code;
+                var code = entity.properties.codgeo; // Correction : utiliser codgeo
                 var prix = prixCommuneData[code];
                 var height = prix !== undefined ? prix * 30 : 0;
                 var fillColor = prix !== undefined ? Cesium.Color.fromCssColorString(getColor(prix)).withAlpha(1.0) : Cesium.Color.fromCssColorString('#808080').withAlpha(1.0);
@@ -549,7 +549,7 @@ function initCesium() {
                 entity.polygon.extrudedHeight = height;
                 entity.polygon.height = 0;
 
-                var communeName = entity.properties.nom || "Nom non défini";
+                var communeName = entity.properties.libgeo || "Nom non défini"; // Correction : utiliser libgeo
                 var dept = dep || "Non spécifié";
                 var region = entity.properties.reg || "Non spécifiée";
                 var prixText = prix !== undefined ? prix.toFixed(1) + " €/m²" : "Donnée non disponible";
@@ -656,7 +656,7 @@ function initCesium() {
                             entity.show = true;
                             visibleCount++;
                         } else {
-                            console.log(`Commune ${entity.properties.nom || 'inconnue'} - dep: ${entityDep}, ne correspond pas à ${codeDep}`);
+                            console.log(`Commune ${entity.properties.libgeo || 'inconnue'} - dep: ${entityDep}, ne correspond pas à ${codeDep}`);
                         }
                     }
                     console.log(`Communes affichées pour ${codeDep} : ${visibleCount}`);

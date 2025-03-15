@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.107/Build/Cesium/Cesium.js"></script>
     <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.107/Build/Cesium/Widgets/widgets.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { 
             font-family: Arial, sans-serif; 
@@ -143,6 +144,13 @@
         .custom-popup strong { 
             color: #555; 
         }
+        .custom-popup a { 
+            color: #3498DB; 
+            text-decoration: none; 
+        }
+        .custom-popup a:hover { 
+            text-decoration: underline; 
+        }
         .leaflet-tooltip { 
             font-size: 12px; 
             padding: 5px; 
@@ -161,6 +169,26 @@
             header img { width: 100px; }
             .tab button { padding: 10px 12px; font-size: 14px; }
         }
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1001;
+            display: none;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498DB;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -173,6 +201,7 @@
 <div class="tab">
     <button class="tablinks" onclick="openTab(event, 'Map2D')" id="defaultOpen">Carte 2D</button>
     <button class="tablinks" onclick="openTab(event, 'Map3D')">Carte 3D des prix par commune</button>
+    <button class="tablinks" onclick="openTab(event, 'Histogram')">Histogramme</button>
 </div>
 
 <div id="Map2D" class="tabcontent">
@@ -180,7 +209,15 @@
 </div>
 
 <div id="Map3D" class="tabcontent">
-    <div id="map3D"></div>
+    <div id="map3D">
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner"></div>
+        </div>
+    </div>
+</div>
+
+<div id="Histogram" class="tabcontent">
+    <canvas id="priceHistogram" width="800" height="400"></canvas>
 </div>
 
 <footer>
@@ -188,6 +225,12 @@
 </footer>
 
 <script>
+// Variables globales pour accéder à la carte et aux couches
+window.map = null;
+window.departementsLayer = null;
+window.communesLayer = null; // Ajout pour gérer la couche des communes globalement
+window.prixCommuneData = {};
+
 // Gestion des onglets
 function openTab(evt, tabName) {
     var i, tabcontent, tablinks;
@@ -209,13 +252,15 @@ function openTab(evt, tabName) {
         }
         initCesium();
         window.cesiumInitialized = true;
+    } else if (tabName === 'Histogram' && !window.histogramInitialized) {
+        initHistogram();
+        window.histogramInitialized = true;
     }
 }
 
 document.getElementById("defaultOpen").click();
 
-// Données partagées
-var prixCommuneData = {};
+// Fonction utilitaire pour les couleurs
 function getColor(prix) {
     return prix < 1000 ? '#F5F5DC' :
            prix > 4000 ? '#800026' :
@@ -225,12 +270,110 @@ function getColor(prix) {
            prix > 2000 ? '#FD8D3C' :
            prix > 1500 ? '#FEB24C' :
            prix >= 1000 ? '#FED976' :
-                          '#808080'; // Correction : utiliser gris pour données indisponibles
+                          '#808080';
+}
+
+// Fonction utilitaire pour générer les URLs Wikipédia
+function getWikipediaUrl(communeName) {
+    if (typeof communeName !== 'string' || !communeName) {
+        console.warn(`communeName invalide : ${communeName}, type : ${typeof communeName}`);
+        return 'https://fr.wikipedia.org/wiki/Nom_non_défini';
+    }
+    const formattedName = encodeURIComponent(communeName.replace(/ /g, '_'));
+    const wikiUrl = `https://fr.wikipedia.org/wiki/${formattedName}`;
+    return wikiUrl;
+}
+
+// Fonction globale pour charger les communes (déplacée hors de DOMContentLoaded)
+function loadCommuneLayer(codeDepartement) {
+    if (window.communesLayer) {
+        window.map.removeLayer(window.communesLayer);
+    }
+
+    fetch('https://www.data.gouv.fr/fr/datasets/r/fb3580f6-e875-408d-809a-ad22fc418581')
+    .then(response => response.json())
+    .then(geojsonData => {
+        console.log("Chargement des communes pour le département :", codeDepartement);
+        window.communesLayer = L.geoJSON(geojsonData, {
+            filter: function (feature) {
+                let dep = feature.properties.dep ? feature.properties.dep.toString().padStart(2, '0') : null;
+                return dep === codeDepartement;
+            },
+            style: function (feature) {
+                let codeCommune = feature.properties.codgeo;
+                let prix = window.prixCommuneData[codeCommune];
+                let fillColor = prix !== undefined ? getColor(prix) : '#808080';
+                return {
+                    fillColor: fillColor,
+                    weight: 1,
+                    opacity: 1,
+                    color: 'black',
+                    fillOpacity: 0.7
+                };
+            },
+            onEachFeature: function (feature, layer) {
+                let codeCommune = feature.properties.codgeo;
+                let prix = window.prixCommuneData[codeCommune] ? window.prixCommuneData[codeCommune].toFixed(1) + " €/m²" : "Donnée non disponible";
+                let communeName = feature.properties.libgeo || 'Nom non défini';
+                let tooltipContent = `${communeName}<br>${prix}`;
+
+                layer.bindPopup(function () {
+                    let wikiUrl = getWikipediaUrl(communeName);
+                    return `
+                        <b>Commune : ${communeName}</b><br>
+                        Code : ${codeCommune}<br>
+                        Prix moyen : ${prix}<br>
+                        <a href="${wikiUrl}" target="_blank">Voir sur Wikipédia</a>
+                    `;
+                });
+
+                layer.bindTooltip(tooltipContent, { direction: 'top', offset: [0, -10] });
+
+                layer.on('mouseover', function () {
+                    if (window.prixCommuneData[codeCommune] !== undefined) {
+                        layer.setStyle({
+                            weight: 3,
+                            color: '#000',
+                            fillOpacity: 1
+                        });
+                        layer.openTooltip();
+                    }
+                });
+
+                layer.on('mouseout', function () {
+                    if (window.prixCommuneData[codeCommune] !== undefined) {
+                        window.communesLayer.resetStyle(layer);
+                        layer.closeTooltip();
+                    }
+                });
+
+                layer.on('click', function () {
+                    var bounds = layer.getBounds();
+                    window.map.fitBounds(bounds, { maxZoom: 13, animate: true });
+                    window.communesLayer.resetStyle(layer);
+                });
+
+                layer.on('popupopen', function () {
+                    layer.setStyle({
+                        weight: 1,
+                        color: 'black',
+                        fillOpacity: 0.7
+                    });
+                });
+
+                layer.on('popupclose', function () {
+                    window.communesLayer.resetStyle(layer);
+                });
+            }
+        }).addTo(window.map);
+    }).catch(error => {
+        console.error('Erreur lors du chargement des communes pour Leaflet :', error);
+    });
 }
 
 // Carte 2D (Leaflet)
 document.addEventListener('DOMContentLoaded', function() {
-    var map = L.map('map', {
+    window.map = L.map('map', {
         zoomAnimation: true,
         zoomDelta: 0.5,
         zoomSnap: 0.5,
@@ -241,19 +384,16 @@ document.addEventListener('DOMContentLoaded', function() {
     var Esri_WorldGrayCanvas = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles © Esri — Esri, DeLorme, NAVTEQ',
         maxZoom: 16
-    }).addTo(map);
+    }).addTo(window.map);
 
     var prixData = {};
-    var departementsLayer = null;
-    var communesLayer = null;
+    window.departementsLayer = null;
 
-    // Charger toutes les données nécessaires au démarrage
     Promise.all([
         fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/prix_m2_moyenne_par_departement.csv').then(response => response.text()),
         fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/contour-des-departements.geojson').then(response => response.json()),
         fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/prix_m2_moyenne_par_commune.csv').then(response => response.text())
     ]).then(([deptCsvText, geojsonData, communeCsvText]) => {
-        // Charger les prix des départements
         let deptRows = deptCsvText.split("\n").map(row => row.split(";"));
         deptRows.forEach(row => {
             let code_dep = row[0].trim();
@@ -261,12 +401,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!isNaN(prix)) prixData[code_dep] = prix;
         });
 
-        // Charger les prix des communes
         let communeRows = communeCsvText.split("\n").map(row => row.split(";"));
         communeRows.forEach(row => {
-            let code_commune = row[0].trim().padStart(5, '0'); // Normalisation à 5 chiffres
+            let code_commune = row[0].trim().padStart(5, '0');
             let prix = parseFloat(row[1]);
-            if (!isNaN(prix)) prixCommuneData[code_commune] = prix;
+            if (!isNaN(prix)) window.prixCommuneData[code_commune] = prix;
         });
 
         function style(feature) {
@@ -282,10 +421,10 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
 
-        departementsLayer = L.geoJSON(geojsonData, {
+        window.departementsLayer = L.geoJSON(geojsonData, {
             style: style,
             onEachFeature: function (feature, layer) {
-                let code = feature.properties.code.toString().padStart(2, '0'); // Ajout de zéros à gauche si nécessaire
+                let code = feature.properties.code.toString().padStart(2, '0');
                 let prix = prixData[code] ? prixData[code].toFixed(1) + " €/m²" : "Donnée non disponible";
                 let popupContent = `<b>Département : ${feature.properties.nom}</b><br>Code : ${code}<br>Prix moyen : ${prix}`;
                 let tooltipContent = `${feature.properties.nom}<br>${prix}`;
@@ -303,14 +442,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 layer.on('mouseout', function () {
-                    departementsLayer.resetStyle(layer);
+                    window.departementsLayer.resetStyle(layer);
                     layer.closeTooltip();
                 });
 
                 layer.on('click', function () {
                     var bounds = layer.getBounds();
-                    map.fitBounds(bounds, { maxZoom: 9, animate: true });
-                    loadCommuneLayer(code); // Utilisation du code avec zéros
+                    window.map.fitBounds(bounds, { maxZoom: 9, animate: true });
+                    loadCommuneLayer(code);
                     console.log("Clic sur département, code :", code);
                 });
 
@@ -323,92 +462,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 layer.on('popupclose', function () {
-                    departementsLayer.resetStyle(layer);
+                    window.departementsLayer.resetStyle(layer);
                 });
             }
-        }).addTo(map);
+        }).addTo(window.map);
     }).catch(error => {
         console.error('Erreur lors du chargement des données initiales pour Leaflet :', error);
     });
-
-    function loadCommuneLayer(codeDepartement) {
-        if (communesLayer) {
-            map.removeLayer(communesLayer);
-        }
-
-        fetch('https://www.data.gouv.fr/fr/datasets/r/fb3580f6-e875-408d-809a-ad22fc418581')
-        .then(response => response.json())
-        .then(geojsonData => {
-            console.log("Chargement des communes pour le département :", codeDepartement);
-            communesLayer = L.geoJSON(geojsonData, {
-                filter: function (feature) {
-                    let dep = feature.properties.dep ? feature.properties.dep.toString().padStart(2, '0') : null;
-                    console.log("Filtrage, dep:", dep, "vs codeDepartement:", codeDepartement);
-                    return dep === codeDepartement;
-                },
-                style: function (feature) {
-                    let codeCommune = feature.properties.codgeo; // Correction : utiliser codgeo
-                    let prix = prixCommuneData[codeCommune];
-                    let fillColor = prix !== undefined ? getColor(prix) : '#808080';
-                    return {
-                        fillColor: fillColor,
-                        weight: 1,
-                        opacity: 1,
-                        color: 'black',
-                        fillOpacity: 0.7
-                    };
-                },
-                onEachFeature: function (feature, layer) {
-                    let codeCommune = feature.properties.codgeo; // Correction : utiliser codgeo
-                    let prix = prixCommuneData[codeCommune] ? prixCommuneData[codeCommune].toFixed(1) + " €/m²" : "Donnée non disponible";
-                    let communeName = feature.properties.libgeo || 'Nom non défini'; // Correction : utiliser libgeo
-                    let popupContent = `<b>Commune : ${communeName}</b><br>Code : ${codeCommune}<br>Prix moyen : ${prix}`;
-                    let tooltipContent = `${communeName}<br>${prix}`;
-
-                    layer.bindPopup(popupContent);
-                    layer.bindTooltip(tooltipContent, { direction: 'top', offset: [0, -10] });
-
-                    layer.on('mouseover', function () {
-                        if (prixCommuneData[codeCommune] !== undefined) {
-                            layer.setStyle({
-                                weight: 3,
-                                color: '#000',
-                                fillOpacity: 1
-                            });
-                            layer.openTooltip();
-                        }
-                    });
-
-                    layer.on('mouseout', function () {
-                        if (prixCommuneData[codeCommune] !== undefined) {
-                            communesLayer.resetStyle(layer);
-                            layer.closeTooltip();
-                        }
-                    });
-
-                    layer.on('click', function () {
-                        var bounds = layer.getBounds();
-                        map.fitBounds(bounds, { maxZoom: 13, animate: true });
-                        communesLayer.resetStyle(layer);
-                    });
-
-                    layer.on('popupopen', function () {
-                        layer.setStyle({
-                            weight: 1,
-                            color: 'black',
-                            fillOpacity: 0.7
-                        });
-                    });
-
-                    layer.on('popupclose', function () {
-                        communesLayer.resetStyle(layer);
-                    });
-                }
-            }).addTo(map);
-        }).catch(error => {
-            console.error('Erreur lors du chargement des communes pour Leaflet :', error);
-        });
-    }
 
     var legend = L.control({position: 'bottomright'});
     legend.onAdd = function (map) {
@@ -424,15 +484,15 @@ document.addEventListener('DOMContentLoaded', function() {
         div.innerHTML += '<br><i style="background:#808080"></i> Données non disponibles<br>';
         return div;
     };
-    legend.addTo(map);
+    legend.addTo(window.map);
 
-    map.on('zoomend', function () {
-        if (map.getZoom() <= 6.4) {
-            if (communesLayer) {
-                map.removeLayer(communesLayer);
+    window.map.on('zoomend', function () {
+        if (window.map.getZoom() <= 6.4) {
+            if (window.communesLayer) {
+                window.map.removeLayer(window.communesLayer);
             }
-            if (departementsLayer) {
-                map.fitBounds(departementsLayer.getBounds(), { maxZoom: 9, animate: true });
+            if (window.departementsLayer) {
+                window.map.fitBounds(window.departementsLayer.getBounds(), { maxZoom: 9, animate: true });
             } else {
                 console.warn("departementsLayer n'est pas encore initialisé.");
             }
@@ -442,6 +502,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Carte 3D (Cesium)
 function initCesium() {
+    var loadingSpinner = document.getElementById('loadingSpinner');
+    loadingSpinner.style.display = 'block';
+
     var viewer = new Cesium.Viewer('map3D', {
         imageryProvider: new Cesium.OpenStreetMapImageryProvider({
             url: 'https://a.tile.openstreetmap.org/'
@@ -455,7 +518,8 @@ function initCesium() {
         animation: false,
         timeline: false,
         fullscreenButton: true,
-        shadows: false
+        shadows: false,
+        infoBox: true
     });
 
     viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#87CEEB');
@@ -476,11 +540,12 @@ function initCesium() {
         }
     });
 
+    viewer.infoBox.frame.setAttribute('sandbox', 'allow-same-origin allow-popups allow-pointer-lock allow-top-navigation');
+
     let communeDataSource;
     let departmentDataSource = null;
     let allCommuneEntities = [];
 
-    // Liste des codes de département des DOM à exclure
     const domDepartments = ["971", "972", "973", "974", "975", "976", "977", "978", "986", "987", "988"];
 
     Promise.all([
@@ -491,12 +556,12 @@ function initCesium() {
     ]).then(([csvText, communeGeojsonData, countriesGeojsonData, deptGeojsonData]) => {
         let rows = csvText.split("\n").map(row => row.split(";"));
         rows.forEach(row => {
-            let code_commune = row[0].trim().padStart(5, '0'); // Normalisation à 5 chiffres
+            let code_commune = row[0].trim().padStart(5, '0');
             let prix = parseFloat(row[1]);
-            if (!isNaN(prix)) prixCommuneData[code_commune] = prix;
+            if (!isNaN(prix)) window.prixCommuneData[code_commune] = prix;
         });
 
-        Cesium.GeoJsonDataSource.load(countriesGeojsonData, {
+        const countriesPromise = Cesium.GeoJsonDataSource.load(countriesGeojsonData, {
             clampToGround: true,
             stroke: Cesium.Color.BLACK,
             strokeWidth: 1,
@@ -530,26 +595,24 @@ function initCesium() {
             clampToGround: false
         });
 
-        communeDataSource.then(function(dataSource) {
+        const communesPromise = communeDataSource.then(function(dataSource) {
             viewer.dataSources.add(dataSource);
             allCommuneEntities = dataSource.entities.values;
             console.log("Nombre total de communes chargées :", allCommuneEntities.length);
 
-            // Inspecter les valeurs de 'dep' pour débogage
             let depValues = new Set();
             for (var i = 0; i < allCommuneEntities.length; i++) {
                 var entity = allCommuneEntities[i];
-                var dep = entity.properties.dep ? entity.properties.dep.toString().padStart(2, '0') : null;
+                var dep = entity.properties._dep ? entity.properties._dep._value.toString().padStart(2, '0') : null;
                 depValues.add(dep);
 
-                // Masquer les communes des DOM
                 if (dep && domDepartments.includes(dep)) {
                     entity.show = false;
                     continue;
                 }
 
-                var code = entity.properties.codgeo; // Correction : utiliser codgeo
-                var prix = prixCommuneData[code];
+                var code = entity.properties._codgeo._value;
+                var prix = window.prixCommuneData[code];
                 var height = prix !== undefined ? prix * 30 : 0;
                 var fillColor = prix !== undefined ? Cesium.Color.fromCssColorString(getColor(prix)).withAlpha(1.0) : Cesium.Color.fromCssColorString('#808080').withAlpha(1.0);
 
@@ -559,22 +622,34 @@ function initCesium() {
                 entity.polygon.extrudedHeight = height;
                 entity.polygon.height = 0;
 
-                var communeName = entity.properties.libgeo || "Nom non défini"; // Correction : utiliser libgeo
+                if (i === 0) {
+                    console.log("Propriétés disponibles pour une commune :", Object.keys(entity.properties));
+                    console.log("Valeur de _libgeo :", entity.properties._libgeo._value);
+                    console.log("Valeur de _codgeo :", entity.properties._codgeo._value);
+                }
+
+                var communeName = entity.properties._libgeo ? entity.properties._libgeo._value : `Commune inconnue (Code: ${code})`;
                 var dept = dep || "Non spécifié";
-                var region = entity.properties.reg || "Non spécifiée";
+                var region = entity.properties._reg ? entity.properties._reg._value : "Non spécifiée";
                 var prixText = prix !== undefined ? prix.toFixed(1) + " €/m²" : "Donnée non disponible";
 
-                entity.description = new Cesium.ConstantProperty(`
-                    <div class="custom-popup">
-                        <h3>${communeName}</h3>
-                        <p><strong>Code commune :</strong> ${code}</p>
-                        <p><strong>Département :</strong> ${dept}</p>
-                        <p><strong>Région :</strong> ${region}</p>
-                        <p><strong>Pays :</strong> France</p>
-                        <p><strong>Continent :</strong> Europe</p>
-                        <p><strong>Prix moyen :</strong> ${prixText}</p>
-                    </div>
-                `);
+                (function(entity, communeName, code, dept, region, prixText) {
+                    entity.description = new Cesium.CallbackProperty(function(time, result) {
+                        let wikiUrl = getWikipediaUrl(communeName);
+                        return `
+                            <div class="custom-popup">
+                                <h3>${communeName}</h3>
+                                <p><strong>Code commune :</strong> ${code}</p>
+                                <p><strong>Département :</strong> ${dept}</p>
+                                <p><strong>Région :</strong> ${region}</p>
+                                <p><strong>Pays :</strong> France</p>
+                                <p><strong>Continent :</strong> Europe</p>
+                                <p><strong>Prix moyen :</strong> ${prixText}</p>
+                                <p><a href="${wikiUrl}" target="_blank">Voir sur Wikipédia</a></p>
+                            </div>
+                        `;
+                    }, false);
+                })(entity, communeName, code, dept, region, prixText);
             }
             console.log("Valeurs uniques de 'dep' dans communes.geojson :", Array.from(depValues));
 
@@ -610,7 +685,7 @@ function initCesium() {
             select.innerHTML = '<option value="">Toute la France</option>';
             deptGeojsonData.features.forEach(feature => {
                 var option = document.createElement('option');
-                option.value = feature.properties.code.toString().padStart(2, '0'); // Assure 2 chiffres
+                option.value = feature.properties.code.toString().padStart(2, '0');
                 option.text = feature.properties.nom;
                 select.appendChild(option);
             });
@@ -629,7 +704,6 @@ function initCesium() {
                     return;
                 }
 
-                // Réinitialiser la visibilité de toutes les communes
                 for (var i = 0; i < allCommuneEntities.length; i++) {
                     allCommuneEntities[i].show = false;
                 }
@@ -657,16 +731,13 @@ function initCesium() {
                         console.error('Erreur lors du chargement du contour du département :', error);
                     });
 
-                    // Filtrer les communes par département, en excluant les DOM
                     let visibleCount = 0;
                     for (var i = 0; i < allCommuneEntities.length; i++) {
                         var entity = allCommuneEntities[i];
-                        var entityDep = entity.properties.dep ? entity.properties.dep.toString().padStart(2, '0') : null;
+                        var entityDep = entity.properties._dep ? entity.properties._dep._value.toString().padStart(2, '0') : null;
                         if (entityDep === codeDep && !domDepartments.includes(entityDep)) {
                             entity.show = true;
                             visibleCount++;
-                        } else {
-                            console.log(`Commune ${entity.properties.libgeo || 'inconnue'} - dep: ${entityDep}, ne correspond pas à ${codeDep}`);
                         }
                     }
                     console.log(`Communes affichées pour ${codeDep} : ${visibleCount}`);
@@ -681,7 +752,7 @@ function initCesium() {
                     });
                     for (var i = 0; i < allCommuneEntities.length; i++) {
                         var entity = allCommuneEntities[i];
-                        var entityDep = entity.properties.dep ? entity.properties.dep.toString().padStart(2, '0') : null;
+                        var entityDep = entity.properties._dep ? entity.properties._dep._value.toString().padStart(2, '0') : null;
                         if (!domDepartments.includes(entityDep)) {
                             entity.show = true;
                         }
@@ -696,8 +767,20 @@ function initCesium() {
         }).catch(error => {
             console.error('Erreur lors du chargement des communes :', error);
         });
+
+        Promise.all([countriesPromise, communesPromise]).then(() => {
+            setTimeout(() => {
+                console.log("Toutes les données sont chargées, masquage du spinner...");
+                loadingSpinner.style.display = 'none';
+            }, 15000);
+        }).catch(error => {
+            console.error('Erreur lors du chargement des données, masquage du spinner malgré l\'erreur :', error);
+            loadingSpinner.style.display = 'none';
+        });
+
     }).catch(error => {
         console.error('Erreur lors du chargement des données initiales :', error);
+        loadingSpinner.style.display = 'none';
     });
 
     function calculateBounds(feature) {
@@ -725,6 +808,155 @@ function initCesium() {
 
         return Cesium.Rectangle.fromDegrees(minLon, minLat, maxLon, maxLat);
     }
+}
+
+// Histogramme (Chart.js) - Navigation avec zoom vers la carte 2D au clic
+function initHistogram() {
+    // Charger les données des prix et les noms des départements
+    Promise.all([
+        fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/prix_m2_moyenne_par_departement.csv').then(response => response.text()),
+        fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/contour-des-departements.geojson').then(response => response.json())
+    ]).then(([csvText, geojsonData]) => {
+        // Traiter les données des prix
+        let rows = csvText.split("\n").map(row => row.split(";"));
+        let prixData = {};
+        rows.forEach(row => {
+            let code_dep = row[0].trim();
+            let prix = parseFloat(row[1]);
+            if (!isNaN(prix)) prixData[code_dep] = prix;
+        });
+
+        // Créer un mapping code -> nom à partir du GeoJSON
+        let deptNames = {};
+        geojsonData.features.forEach(feature => {
+            let code = feature.properties.code.toString().trim();
+            let nom = feature.properties.nom;
+            deptNames[code] = nom;
+        });
+
+        // Préparer les données pour l'histogramme
+        let entries = Object.entries(prixData);
+
+        // Trier les départements dans un ordre logique
+        entries.sort((a, b) => {
+            let codeA = a[0];
+            let codeB = b[0];
+            if (codeA === "2A" && codeB === "2B") return -1;
+            if (codeA === "2B" && codeB === "2A") return 1;
+            if (codeA === "2A" || codeA === "2B") return codeB.startsWith("2") ? -1 : 1;
+            if (codeB === "2A" || codeB === "2B") return codeA.startsWith("2") ? 1 : -1;
+            return parseInt(codeA) - parseInt(codeB);
+        });
+
+        // Créer les labels et les données triées
+        let labels = entries.map(entry => `Dép. ${entry[0]}`);
+        let data = entries.map(entry => entry[1]);
+        let codes = entries.map(entry => entry[0]); // Garder les codes pour les tooltips et le clic
+
+        const ctx = document.getElementById('priceHistogram').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Prix au m² (€)',
+                    data: data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Prix au m² (€)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Départements'
+                        },
+                        ticks: {
+                            maxRotation: 90,
+                            minRotation: 90,
+                            font: {
+                                size: 8
+                            },
+                            callback: function(value, index, values) {
+                                return index % 2 === 0 ? labels[index] : '';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true
+                    },
+                    title: {
+                        display: true,
+                        text: 'Prix moyen au m² par département en France'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let index = context.dataIndex;
+                                let code = codes[index];
+                                let nom = deptNames[code] || "Nom non disponible";
+                                let prix = context.parsed.y.toFixed(1);
+                                return `${nom} (Dép. ${code}) : ${prix} €/m²`;
+                            }
+                        }
+                    }
+                },
+                onClick: function(event, elements) {
+                    if (elements.length > 0) {
+                        let index = elements[0].index;
+                        let code = codes[index];
+                        let nom = deptNames[code] || "Nom non disponible";
+                        console.log(`Clic sur le département ${code} (${nom})`);
+
+                        // Changer l'onglet vers "Map2D"
+                        let map2DTab = document.getElementsByClassName("tablinks")[0];
+                        openTab({ currentTarget: map2DTab }, 'Map2D');
+
+                        // Attendre que la carte soit prête et zoomer
+                        setTimeout(() => {
+                            if (window.map && window.departementsLayer) {
+                                let feature = Object.values(window.departementsLayer._layers).find(layer => 
+                                    layer.feature.properties.code.toString().padStart(2, '0') === code
+                                );
+                                if (feature) {
+                                    // Réinitialiser la vue à la France entière avant de zoomer
+                                    window.map.setView([46.603354, 1.888334], 6, { animate: true });
+                                    setTimeout(() => {
+                                        window.map.fitBounds(feature.getBounds(), {
+                                            maxZoom: 9,
+                                            animate: true,
+                                            duration: 1.5 // Durée de l'animation en secondes
+                                        });
+                                        loadCommuneLayer(code); // Charger les communes après le zoom
+                                    }, 500); // Délai pour laisser la vue initiale se réinitialiser
+                                } else {
+                                    console.warn(`Feature non trouvée pour le code ${code}`);
+                                }
+                            } else {
+                                console.warn("Carte ou départementsLayer non initialisés");
+                            }
+                        }, 1000); // Délai pour s'assurer que l'onglet est affiché
+                    }
+                },
+                maintainAspectRatio: false
+            }
+        });
+
+        console.log("Nombre de départements dans l'histogramme :", labels.length);
+    }).catch(error => {
+        console.error('Erreur lors du chargement des données pour l\'histogramme :', error);
+    });
 }
 </script>
 

@@ -9,7 +9,158 @@
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.107/Build/Cesium/Cesium.js"></script>
     <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.107/Build/Cesium/Widgets/widgets.css" />
     <style>
-        /* [Styles inchangés, omis pour brièveté] */
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f4f4f4; 
+        }
+        header { 
+            background-color: #2C3E50; 
+            color: white; 
+            padding: 10px 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+        }
+        header img { 
+            width: 150px; 
+            vertical-align: middle; 
+            margin-left: 20px; 
+        }
+        header h1 { 
+            font-size: 28px; 
+            margin-left: 20px; 
+            flex-grow: 1; 
+        }
+        .tab { 
+            overflow: hidden; 
+            border: 1px solid #ccc; 
+            background-color: #f1f1f1; 
+        }
+        .tab button { 
+            background-color: inherit; 
+            float: left; 
+            border: none; 
+            outline: none; 
+            cursor: pointer; 
+            padding: 14px 16px; 
+            transition: 0.3s; 
+            font-size: 16px; 
+        }
+        .tab button:hover { 
+            background-color: #ddd; 
+        }
+        .tab button.active { 
+            background-color: #3498DB; 
+            color: white; 
+        }
+        .tabcontent { 
+            display: none; 
+            height: calc(80vh - 60px); 
+            width: 100%; 
+            position: relative; 
+        }
+        #map, #map3D { 
+            height: 100%; 
+            width: 100%; 
+        }
+        .info.legend { 
+            background: white; 
+            padding: 10px; 
+            font-size: 12px; 
+            line-height: 18px; 
+            border-radius: 5px; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.2); 
+        }
+        .info.legend i { 
+            width: 18px; 
+            height: 18px; 
+            float: left; 
+            margin-right: 8px; 
+            opacity: 0.7; 
+        }
+        footer { 
+            text-align: center; 
+            background-color: #2C3E50; 
+            color: white; 
+            padding: 10px 0; 
+            font-size: 14px; 
+            position: fixed; 
+            bottom: 0; 
+            width: 100%; 
+        }
+        footer a { 
+            color: #ECF0F1; 
+            text-decoration: none; 
+        }
+        footer a:hover { 
+            text-decoration: underline; 
+        }
+        #legend3D, #controls3D { 
+            position: absolute; 
+            background: white; 
+            padding: 10px; 
+            border-radius: 5px; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.2); 
+            font-size: 12px; 
+            z-index: 1000; 
+        }
+        #legend3D { 
+            bottom: 10px; 
+            right: 10px; 
+        }
+        #controls3D { 
+            top: 50px; 
+            left: 10px; 
+        }
+        #controls3D select { 
+            width: 100%; 
+            padding: 5px; 
+            margin-top: 5px; 
+            box-sizing: border-box; 
+        }
+        .cesium-infoBox { 
+            font-family: Arial, sans-serif; 
+        }
+        .custom-popup { 
+            padding: 15px; 
+            background: #fff; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); 
+            animation: fadeIn 0.3s ease; 
+        }
+        .custom-popup h3 { 
+            margin: 0 0 10px; 
+            color: #2C3E50; 
+            font-size: 18px; 
+        }
+        .custom-popup p { 
+            margin: 5px 0; 
+            font-size: 14px; 
+        }
+        .custom-popup strong { 
+            color: #555; 
+        }
+        .leaflet-tooltip { 
+            font-size: 12px; 
+            padding: 5px; 
+            background: rgba(255, 255, 255, 0.9); 
+            border-radius: 3px; 
+        }
+        .leaflet-interactive:focus { 
+            outline: none; 
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @media (max-width: 768px) {
+            header h1 { font-size: 20px; }
+            header img { width: 100px; }
+            .tab button { padding: 10px 12px; font-size: 14px; }
+        }
     </style>
 </head>
 <body>
@@ -74,7 +225,7 @@ function getColor(prix) {
            prix > 2000 ? '#FD8D3C' :
            prix > 1500 ? '#FEB24C' :
            prix >= 1000 ? '#FED976' :
-                          '#808080'; // Changé '#31a354' en '#808080' pour "données indisponibles"
+                          '#31a354';
 }
 
 // Carte 2D (Leaflet)
@@ -96,28 +247,30 @@ document.addEventListener('DOMContentLoaded', function() {
     var departementsLayer = null;
     var communesLayer = null;
 
+    // Charger toutes les données nécessaires au démarrage
     Promise.all([
         fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/prix_m2_moyenne_par_departement.csv').then(response => response.text()),
         fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/contour-des-departements.geojson').then(response => response.json()),
         fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/prix_m2_moyenne_par_commune.csv').then(response => response.text())
     ]).then(([deptCsvText, geojsonData, communeCsvText]) => {
+        // Charger les prix des départements
         let deptRows = deptCsvText.split("\n").map(row => row.split(";"));
         deptRows.forEach(row => {
-            let code_dep = row[0].trim().padStart(2, '0');
+            let code_dep = row[0].trim();
             let prix = parseFloat(row[1]);
             if (!isNaN(prix)) prixData[code_dep] = prix;
         });
 
+        // Charger les prix des communes
         let communeRows = communeCsvText.split("\n").map(row => row.split(";"));
         communeRows.forEach(row => {
-            let code_commune = row[0].trim().padStart(5, '0'); // Normalisation à 5 chiffres (ex. "01001")
+            let code_commune = row[0].trim();
             let prix = parseFloat(row[1]);
             if (!isNaN(prix)) prixCommuneData[code_commune] = prix;
-            console.log("Ajout au prixCommuneData :", code_commune, prix); // Débogage
         });
 
         function style(feature) {
-            let code = feature.properties.code.toString().padStart(2, '0');
+            let code = feature.properties.code.toString().trim();
             let prix = prixData[code];
             let fillColor = prix !== undefined ? getColor(prix) : '#808080';
             return {
@@ -132,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
         departementsLayer = L.geoJSON(geojsonData, {
             style: style,
             onEachFeature: function (feature, layer) {
-                let code = feature.properties.code.toString().padStart(2, '0');
+                let code = feature.properties.code.toString().padStart(2, '0'); // Ajout de zéros à gauche si nécessaire
                 let prix = prixData[code] ? prixData[code].toFixed(1) + " €/m²" : "Donnée non disponible";
                 let popupContent = `<b>Département : ${feature.properties.nom}</b><br>Code : ${code}<br>Prix moyen : ${prix}`;
                 let tooltipContent = `${feature.properties.nom}<br>${prix}`;
@@ -157,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 layer.on('click', function () {
                     var bounds = layer.getBounds();
                     map.fitBounds(bounds, { maxZoom: 9, animate: true });
-                    loadCommuneLayer(code);
+                    loadCommuneLayer(code); // Utilisation du code avec zéros
                     console.log("Clic sur département, code :", code);
                 });
 
@@ -190,16 +343,13 @@ document.addEventListener('DOMContentLoaded', function() {
             communesLayer = L.geoJSON(geojsonData, {
                 filter: function (feature) {
                     let dep = feature.properties.dep ? feature.properties.dep.toString().padStart(2, '0') : null;
-                    // Exclure les DOM (codes commençant par 97, 98, etc.)
-                    let isDOM = dep && (dep.startsWith('97') || dep.startsWith('98'));
-                    console.log("Filtrage, dep:", dep, "vs codeDepartement:", codeDepartement, "isDOM:", isDOM);
-                    return dep === codeDepartement && !isDOM;
+                    console.log("Filtrage, dep:", dep, "vs codeDepartement:", codeDepartement);
+                    return dep === codeDepartement;
                 },
                 style: function (feature) {
-                    let codeCommune = feature.properties.codgeo; // Utilisation de codgeo
+                    let codeCommune = feature.properties.code;
                     let prix = prixCommuneData[codeCommune];
                     let fillColor = prix !== undefined ? getColor(prix) : '#808080';
-                    console.log("Commune:", codeCommune, "Prix:", prix, "Couleur:", fillColor); // Débogage
                     return {
                         fillColor: fillColor,
                         weight: 1,
@@ -209,9 +359,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     };
                 },
                 onEachFeature: function (feature, layer) {
-                    let codeCommune = feature.properties.codgeo;
+                    let codeCommune = feature.properties.code;
                     let prix = prixCommuneData[codeCommune] ? prixCommuneData[codeCommune].toFixed(1) + " €/m²" : "Donnée non disponible";
-                    let communeName = feature.properties.libgeo || 'Nom non défini';
+                    let communeName = feature.properties.nom || 'Nom non défini';
                     let popupContent = `<b>Commune : ${communeName}</b><br>Code : ${codeCommune}<br>Prix moyen : ${prix}`;
                     let tooltipContent = `${communeName}<br>${prix}`;
 
@@ -338,10 +488,9 @@ function initCesium() {
     ]).then(([csvText, communeGeojsonData, countriesGeojsonData, deptGeojsonData]) => {
         let rows = csvText.split("\n").map(row => row.split(";"));
         rows.forEach(row => {
-            let code_commune = row[0].trim().padStart(5, '0'); // Normalisation à 5 chiffres (ex. "01001")
+            let code_commune = row[0].trim();
             let prix = parseFloat(row[1]);
             if (!isNaN(prix)) prixCommuneData[code_commune] = prix;
-            console.log("Ajout au prixCommuneData :", code_commune, prix); // Débogage
         });
 
         Cesium.GeoJsonDataSource.load(countriesGeojsonData, {
@@ -352,14 +501,17 @@ function initCesium() {
         }).then(function(dataSource) {
             viewer.dataSources.add(dataSource);
             var entities = dataSource.entities.values;
+
             for (var i = 0; i < entities.length; i++) {
                 var entity = entities[i];
                 var countryName = entity.properties.NAME || "Nom non défini";
                 var continent = entity.properties.CONTINENT || "Non spécifié";
+
                 entity.polygon.extrudedHeight = 0;
                 entity.polygon.material = Cesium.Color.GRAY.withAlpha(0.3);
                 entity.polygon.outline = true;
                 entity.polygon.outlineColor = Cesium.Color.BLACK;
+
                 entity.description = new Cesium.ConstantProperty(`
                     <div class="custom-popup">
                         <h3>${countryName}</h3>
@@ -380,16 +532,16 @@ function initCesium() {
             allCommuneEntities = dataSource.entities.values;
             console.log("Nombre total de communes chargées :", allCommuneEntities.length);
 
+            // Inspecter les valeurs de 'dep' pour débogage
             let depValues = new Set();
             for (var i = 0; i < allCommuneEntities.length; i++) {
                 var entity = allCommuneEntities[i];
                 var dep = entity.properties.dep ? entity.properties.dep.toString().padStart(2, '0') : null;
                 depValues.add(dep);
-                var code = entity.properties.codgeo; // Utilisation de codgeo
+                var code = entity.properties.code;
                 var prix = prixCommuneData[code];
                 var height = prix !== undefined ? prix * 30 : 0;
                 var fillColor = prix !== undefined ? Cesium.Color.fromCssColorString(getColor(prix)).withAlpha(1.0) : Cesium.Color.fromCssColorString('#808080').withAlpha(1.0);
-                console.log("Commune:", code, "Prix:", prix, "Couleur:", fillColor); // Débogage
 
                 entity.polygon.material = fillColor;
                 entity.polygon.outline = true;
@@ -397,7 +549,8 @@ function initCesium() {
                 entity.polygon.extrudedHeight = height;
                 entity.polygon.height = 0;
 
-                var communeName = entity.properties.libgeo || "Nom non défini";
+                var communeName = entity.properties.nom || "Nom non défini";
+                var dept = dep || "Non spécifié";
                 var region = entity.properties.reg || "Non spécifiée";
                 var prixText = prix !== undefined ? prix.toFixed(1) + " €/m²" : "Donnée non disponible";
 
@@ -405,7 +558,7 @@ function initCesium() {
                     <div class="custom-popup">
                         <h3>${communeName}</h3>
                         <p><strong>Code commune :</strong> ${code}</p>
-                        <p><strong>Département :</strong> ${dep}</p>
+                        <p><strong>Département :</strong> ${dept}</p>
                         <p><strong>Région :</strong> ${region}</p>
                         <p><strong>Pays :</strong> France</p>
                         <p><strong>Continent :</strong> Europe</p>
@@ -447,7 +600,7 @@ function initCesium() {
             select.innerHTML = '<option value="">Toute la France</option>';
             deptGeojsonData.features.forEach(feature => {
                 var option = document.createElement('option');
-                option.value = feature.properties.code.toString().padStart(2, '0');
+                option.value = feature.properties.code.toString().padStart(2, '0'); // Assure 2 chiffres
                 option.text = feature.properties.nom;
                 select.appendChild(option);
             });
@@ -466,6 +619,7 @@ function initCesium() {
                     return;
                 }
 
+                // Réinitialiser la visibilité de toutes les communes
                 for (var i = 0; i < allCommuneEntities.length; i++) {
                     allCommuneEntities[i].show = false;
                 }
@@ -473,7 +627,7 @@ function initCesium() {
                 if (codeDep) {
                     var depFeature = deptGeojsonData.features.find(f => f.properties.code.toString().padStart(2, '0') === codeDep);
                     var bounds = calculateBounds(depFeature);
-                    viewer.camera.flyTo({
+                    viewer.camera.flyTo({ 
                         destination: bounds,
                         duration: 1.5
                     });
@@ -493,21 +647,21 @@ function initCesium() {
                         console.error('Erreur lors du chargement du contour du département :', error);
                     });
 
+                    // Filtrer les communes par département
                     let visibleCount = 0;
                     for (var i = 0; i < allCommuneEntities.length; i++) {
                         var entity = allCommuneEntities[i];
                         var entityDep = entity.properties.dep ? entity.properties.dep.toString().padStart(2, '0') : null;
-                        let isDOM = entityDep && (entityDep.startsWith('97') || entityDep.startsWith('98'));
-                        if (entityDep === codeDep && !isDOM) {
+                        if (entityDep === codeDep) {
                             entity.show = true;
                             visibleCount++;
                         } else {
-                            console.log(`Commune ${entity.properties.libgeo || 'inconnue'} - dep: ${entityDep}, ne correspond pas à ${codeDep} (isDOM: ${isDOM})`);
+                            console.log(`Commune ${entity.properties.nom || 'inconnue'} - dep: ${entityDep}, ne correspond pas à ${codeDep}`);
                         }
                     }
                     console.log(`Communes affichées pour ${codeDep} : ${visibleCount}`);
                     if (visibleCount === 0) {
-                        console.warn(`Aucune commune trouvée pour ${codeDep}. Vérifiez les données.`);
+                        console.warn(`Aucune commune trouvée pour ${codeDep}. Vérifiez les valeurs de 'dep' dans communes.geojson.`);
                     }
                 } else {
                     viewer.camera.flyTo({

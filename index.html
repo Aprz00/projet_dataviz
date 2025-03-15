@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
             map.removeLayer(communesLayer);
         }
 
-        fetch('https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/communes.geojson')
+        fetch('https://www.data.gouv.fr/fr/datasets/r/fb3580f6-e875-408d-809a-ad22fc418581')
         .then(response => response.json())
         .then(geojsonData => {
             console.log("Chargement des communes pour le département :", codeDepartement);
@@ -482,7 +482,7 @@ function initCesium() {
 
     Promise.all([
         fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/prix_m2_moyenne_par_commune.csv').then(response => response.text()),
-        fetch('https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/communes.geojson').then(response => response.json()),
+        fetch('https://www.data.gouv.fr/fr/datasets/r/fb3580f6-e875-408d-809a-ad22fc418581').then(response => response.json()),
         fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/ne_50m_admin_0_countries.geojson').then(response => response.json()),
         fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/contour-des-departements.geojson').then(response => response.json())
     ]).then(([csvText, communeGeojsonData, countriesGeojsonData, deptGeojsonData]) => {

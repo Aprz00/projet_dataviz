@@ -112,7 +112,7 @@
             right: 10px; 
         }
         #controls3D { 
-            top: 50px; /* Ajusté pour éviter les chevauchements avec les contrôles Cesium */
+            top: 50px; 
             left: 10px; 
         }
         #controls3D select { 
@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
         departementsLayer = L.geoJSON(geojsonData, {
             style: style,
             onEachFeature: function (feature, layer) {
-                let code = feature.properties.code;
+                let code = feature.properties.code.toString().padStart(2, '0'); // Ajout de zéros à gauche si nécessaire
                 let prix = prixData[code] ? prixData[code].toFixed(1) + " €/m²" : "Donnée non disponible";
                 let popupContent = `<b>Département : ${feature.properties.nom}</b><br>Code : ${code}<br>Prix moyen : ${prix}`;
                 let tooltipContent = `${feature.properties.nom}<br>${prix}`;
@@ -310,8 +310,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 layer.on('click', function () {
                     var bounds = layer.getBounds();
                     map.fitBounds(bounds, { maxZoom: 9, animate: true });
-                    loadCommuneLayer(feature.properties.code);
-                    departementsLayer.resetStyle(layer);
+                    loadCommuneLayer(code); // Utilisation du code avec zéros
+                    console.log("Clic sur département, code :", code);
                 });
 
                 layer.on('popupopen', function () {
@@ -339,9 +339,12 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/communes.geojson')
         .then(response => response.json())
         .then(geojsonData => {
+            console.log("Chargement des communes pour le département :", codeDepartement);
             communesLayer = L.geoJSON(geojsonData, {
                 filter: function (feature) {
-                    return feature.properties.dep === codeDepartement;
+                    let dep = feature.properties.dep ? feature.properties.dep.toString().padStart(2, '0') : null;
+                    console.log("Filtrage, dep:", dep, "vs codeDepartement:", codeDepartement);
+                    return dep === codeDepartement;
                 },
                 style: function (feature) {
                     let codeCommune = feature.properties.code;
@@ -428,7 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (communesLayer) {
                 map.removeLayer(communesLayer);
             }
-            if (departementsLayer) { // Vérification ajoutée pour éviter l'erreur
+            if (departementsLayer) {
                 map.fitBounds(departementsLayer.getBounds(), { maxZoom: 9, animate: true });
             } else {
                 console.warn("departementsLayer n'est pas encore initialisé.");
@@ -533,7 +536,7 @@ function initCesium() {
             let depValues = new Set();
             for (var i = 0; i < allCommuneEntities.length; i++) {
                 var entity = allCommuneEntities[i];
-                var dep = entity.properties.dep;
+                var dep = entity.properties.dep ? entity.properties.dep.toString().padStart(2, '0') : null;
                 depValues.add(dep);
                 var code = entity.properties.code;
                 var prix = prixCommuneData[code];
@@ -544,10 +547,10 @@ function initCesium() {
                 entity.polygon.outline = true;
                 entity.polygon.outlineColor = fillColor;
                 entity.polygon.extrudedHeight = height;
-                entity.polygon.height = 0; // Explicitement définir la hauteur à 0 pour désactiver le clampage au terrain
+                entity.polygon.height = 0;
 
                 var communeName = entity.properties.nom || "Nom non défini";
-                var dept = entity.properties.dep || "Non spécifié";
+                var dept = dep || "Non spécifié";
                 var region = entity.properties.reg || "Non spécifiée";
                 var prixText = prix !== undefined ? prix.toFixed(1) + " €/m²" : "Donnée non disponible";
 
@@ -597,7 +600,7 @@ function initCesium() {
             select.innerHTML = '<option value="">Toute la France</option>';
             deptGeojsonData.features.forEach(feature => {
                 var option = document.createElement('option');
-                option.value = feature.properties.code;
+                option.value = feature.properties.code.toString().padStart(2, '0'); // Assure 2 chiffres
                 option.text = feature.properties.nom;
                 select.appendChild(option);
             });
@@ -622,11 +625,11 @@ function initCesium() {
                 }
 
                 if (codeDep) {
-                    var depFeature = deptGeojsonData.features.find(f => f.properties.code === codeDep);
+                    var depFeature = deptGeojsonData.features.find(f => f.properties.code.toString().padStart(2, '0') === codeDep);
                     var bounds = calculateBounds(depFeature);
                     viewer.camera.flyTo({ 
                         destination: bounds,
-                        duration: 1.5 // Animation fluide
+                        duration: 1.5
                     });
 
                     var depGeojson = {
@@ -648,7 +651,7 @@ function initCesium() {
                     let visibleCount = 0;
                     for (var i = 0; i < allCommuneEntities.length; i++) {
                         var entity = allCommuneEntities[i];
-                        var entityDep = entity.properties.dep ? String(entity.properties.dep).trim() : null;
+                        var entityDep = entity.properties.dep ? entity.properties.dep.toString().padStart(2, '0') : null;
                         if (entityDep === codeDep) {
                             entity.show = true;
                             visibleCount++;
@@ -664,14 +667,14 @@ function initCesium() {
                     viewer.camera.flyTo({
                         destination: Cesium.Cartesian3.fromDegrees(2.5, 46.5, 400000),
                         orientation: { heading: Cesium.Math.toRadians(0.0), pitch: Cesium.Math.toRadians(-60.0) },
-                        duration: 1.5 // Animation fluide
+                        duration: 1.5
                     });
                     for (var i = 0; i < allCommuneEntities.length; i++) {
                         allCommuneEntities[i].show = true;
                     }
                     console.log("Toutes les communes affichées :", allCommuneEntities.length);
                 }
-                viewer.scene.requestRender(); // Forcer le rendu
+                viewer.scene.requestRender();
             };
 
             controlsDiv.appendChild(select);

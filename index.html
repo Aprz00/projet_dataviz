@@ -480,6 +480,9 @@ function initCesium() {
     let departmentDataSource = null;
     let allCommuneEntities = [];
 
+    // Liste des codes de département des DOM à exclure
+    const domDepartments = ["971", "972", "973", "974", "975", "976", "977", "978", "986", "987", "988"];
+
     Promise.all([
         fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/prix_m2_moyenne_par_commune.csv').then(response => response.text()),
         fetch('https://www.data.gouv.fr/fr/datasets/r/fb3580f6-e875-408d-809a-ad22fc418581').then(response => response.json()),
@@ -538,6 +541,13 @@ function initCesium() {
                 var entity = allCommuneEntities[i];
                 var dep = entity.properties.dep ? entity.properties.dep.toString().padStart(2, '0') : null;
                 depValues.add(dep);
+
+                // Masquer les communes des DOM
+                if (dep && domDepartments.includes(dep)) {
+                    entity.show = false;
+                    continue;
+                }
+
                 var code = entity.properties.codgeo; // Correction : utiliser codgeo
                 var prix = prixCommuneData[code];
                 var height = prix !== undefined ? prix * 30 : 0;
@@ -647,12 +657,12 @@ function initCesium() {
                         console.error('Erreur lors du chargement du contour du département :', error);
                     });
 
-                    // Filtrer les communes par département
+                    // Filtrer les communes par département, en excluant les DOM
                     let visibleCount = 0;
                     for (var i = 0; i < allCommuneEntities.length; i++) {
                         var entity = allCommuneEntities[i];
                         var entityDep = entity.properties.dep ? entity.properties.dep.toString().padStart(2, '0') : null;
-                        if (entityDep === codeDep) {
+                        if (entityDep === codeDep && !domDepartments.includes(entityDep)) {
                             entity.show = true;
                             visibleCount++;
                         } else {
@@ -670,9 +680,13 @@ function initCesium() {
                         duration: 1.5
                     });
                     for (var i = 0; i < allCommuneEntities.length; i++) {
-                        allCommuneEntities[i].show = true;
+                        var entity = allCommuneEntities[i];
+                        var entityDep = entity.properties.dep ? entity.properties.dep.toString().padStart(2, '0') : null;
+                        if (!domDepartments.includes(entityDep)) {
+                            entity.show = true;
+                        }
                     }
-                    console.log("Toutes les communes affichées :", allCommuneEntities.length);
+                    console.log("Toutes les communes affichées (sauf DOM) :", allCommuneEntities.length);
                 }
                 viewer.scene.requestRender();
             };

@@ -6,4 +6,4 @@ Ensuite, les pays du monde provient d'ici "https://github.com/nvkelso/natural-ea
 
 et le contour des departements il faut que je retrouve " " 
 
-de même pour la donnée sur les prix au m2 
+Pour le csv les données provient de data.gouv, intitulé : "Indicateurs Immobiliers par commune et par année (prix et volumes sur la période 2014-2023)" Csv qui à ensuite était traité pour avoir le prix moyen par departement car c'est uniquement par communes. 

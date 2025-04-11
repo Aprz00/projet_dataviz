@@ -4,6 +4,6 @@ Le geojson des communes étant trop lourd, il ne peut être charger ici. Il prov
 
 Ensuite, les pays du monde provient d'ici "https://github.com/nvkelso/natural-earth-vector/blob/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_50m_admin_0_countries.geojson" 
 
-et le contour des departements il faut que je retrouve " " 
+et le contour des departements provient également de data.gouv " Carte des départements ". 
 
 Pour le csv les données provient de data.gouv, intitulé : "Indicateurs Immobiliers par commune et par année (prix et volumes sur la période 2014-2023)" Csv qui à ensuite était traité pour avoir le prix moyen par departement car c'est uniquement par communes. 

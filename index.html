@@ -10,6 +10,22 @@
     <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.107/Build/Cesium/Widgets/widgets.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+	<!-- Ajout des favicons -->
+    <!-- Favicon standard -->
+    <link rel="icon" type="image/png" sizes="16x16" href="https://aprz00.github.io/projet_dataviz/favicon/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://aprz00.github.io/projet_dataviz/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/x-icon" href="https://aprz00.github.io/projet_dataviz/favicon/favicon.ico">
+
+    <!-- Apple Touch Icon (pour iOS) -->
+    <link rel="apple-touch-icon" sizes="180x180" href="https://aprz00.github.io/projet_dataviz/favicon/apple-touch-icon.png">
+
+    <!-- Android Chrome -->
+    <link rel="icon" type="image/png" sizes="192x192" href="https://aprz00.github.io/projet_dataviz/favicon/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://aprz00.github.io/projet_dataviz/favicon/android-chrome-512x512.png">
+
+    <!-- Web App Manifest (PWA) -->
+    <link rel="manifest" href="https://aprz00.github.io/projet_dataviz/favicon/site.webmanifest">
+</head>
     <style>
         * {
             margin: 0;
@@ -187,39 +203,6 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             font-family: 'Poppins', sans-serif;
-        }
-
-        .custom-popup {
-            padding: 15px;
-            background: linear-gradient(135deg, #ffffff, #f0f5ff);
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-            border-left: 4px solid #3498db;
-            max-width: 300px;
-        }
-
-        .custom-popup h3 {
-            margin: 0 0 10px;
-            color: #2c3e50;
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .custom-popup p {
-            margin: 5px 0;
-            font-size: 14px;
-            color: #34495e;
-        }
-
-        .custom-popup a {
-            color: #3498db;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .custom-popup a:hover {
-            text-decoration: underline;
-            color: #2980b9;
         }
 
         .leaflet-tooltip {
@@ -546,42 +529,585 @@
             .leaflet-control-price-filter,
             .leaflet-control-stats { width: 180px; }
         }
+		/* Style spécifique pour les tooltips de la carte de comparaison */
+.leaflet-tooltip-comparison {
+    font-size: 12px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 5px;
+    border-left: 4px solid #3498db;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    color: #2c3e50;
+    font-weight: 500;
+}
+		 /* Styles pour le menu déroulant des communes */
+.commune-list-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 300px;
+    max-height: calc(100% - 40px);
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none; /* Masqué par défaut */
+    flex-direction: column;
+    font-family: 'Poppins', sans-serif;
+    border-left: 4px solid #3498db;
+}
+
+.commune-list-header {
+    padding: 12px;
+    background: #3498db;
+    color: #ffffff;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.commune-list-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.commune-list-header button {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 5px 10px;
+    transition: background 0.3s ease;
+}
+
+.commune-list-header button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.commune-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.commune-list ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.commune-list li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.commune-list li:hover {
+    background: #f0f5ff;
+}
+
+.commune-list li:last-child {
+    border-bottom: none;
+}
+
+.commune-list li span {
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.commune-list li .price {
+    font-weight: 500;
+    color: #3498db;
+}
+
+.sort-controls {
+    padding: 10px;
+    display: flex;
+    gap: 10px;
+    border-bottom: 1px solid #eee;
+    flex-wrap: wrap; /* Ajout pour éviter le débordement */
+}
+
+.sort-controls button {
+    padding: 6px 12px;
+    background: #3498db;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.3s ease;
+    flex: 1; /* Les boutons partagent l'espace équitablement */
+    min-width: 60px; /* Largeur minimale pour éviter qu'ils soient trop petits */
+}
+
+.sort-controls button:hover {
+    background: #2980b9;
+}
+
+.sort-controls button.active {
+    background: #2c3e50;
+}
+.commune-info-box {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    z-index: 998;
+    border-left: 4px solid #3498db;
+    width: 250px;
+    display: none; /* Masqué par défaut */
+    font-family: 'Poppins', sans-serif;
+}
+
+.commune-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.commune-info-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.commune-info-header button {
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    color: #7f8c8d;
+    transition: color 0.3s ease;
+}
+
+.commune-info-header button:hover {
+    color: #e74c3c;
+}
+
+.commune-info-content p {
+    margin: 5px 0;
+    color: #34495e;
+}
+
+.commune-info-content a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.commune-info-content a:hover {
+    text-decoration: underline;
+    color: #2980b9;
+}
+
+/* Ajuster la position de la légende pour qu'elle soit en dessous de l'encadré */
+#legend3D {
+    bottom:10px;
+    right: 20px;
+    top: auto; /* S'assurer qu'elle ne chevauche pas */
+}
+.histogram-controls {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.histogram-controls label {
+    font-size: 14px;
+    color: #2c3e50;
+    margin-right: 5px;
+}
+
+.histogram-controls select {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.histogram-controls select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+/* S'assurer que le canvas prend toute la place */
+#histogramChart {
+    width: 100%;
+    height: 100%;
+}
+
+/* Styles spécifiques pour l'onglet Accueil */
+#Accueil .intro-text {
+    font-size: 18px;
+    font-weight: 300;
+    line-height: 1.8;
+    margin-bottom: 20px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#Accueil h3 {
+    color: #2c3e50;
+    font-size: 24px;
+    margin: 30px 0 15px;
+    position: relative;
+    text-align: left;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#Accueil h3::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -5px;
+    width: 50px;
+    height: 3px;
+    background: #3498db;
+}
+
+#Accueil p {
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#Accueil .section-divider {
+    width: 100%;
+    max-width: 800px;
+    height: 1px;
+    background: #ddd;
+    margin: 40px auto;
+}
+
+#Accueil .tab-description {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 20px auto;
+    max-width: 800px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease;
+}
+
+#Accueil .tab-description:hover {
+    transform: translateY(-5px);
+}
+
+#Accueil .tab-description h4 {
+    color: #3498db;
+    font-size: 20px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#Accueil .tab-description p {
+    margin-bottom: 10px;
+    color: #34495e;
+}
+
+#Accueil .outro-text {
+    font-size: 18px;
+    font-weight: 500;
+    color: #2c3e50;
+    margin-top: 40px;
+    text-align: center;
+}
+.tabcontent.active {
+    display: block !important;
+}
+/* Style pour l'onglet Accueil */
+#Accueil {
+    max-height: 80vh; /* Limite la hauteur à 80% de la hauteur de la fenêtre */
+    overflow-y: auto; /* Ajoute une barre de défilement verticale si le contenu dépasse */
+    padding: 20px; /* Garde un peu d'espace autour du texte */
+    box-sizing: border-box; /* S'assure que le padding est inclus dans la hauteur */
+}
+/* Style pour l'onglet Infographie */
+#Infographie {
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Conteneur de l'infographie */
+.infographie-container {
+    position: relative;
+    max-width: 100%;
+    margin: 20px 0;
+    text-align: center;
+}
+
+/* Style de l'image */
+#infographieImage {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+/* Style du bouton plein écran */
+#fullscreenBtn {
+    position: absolute;
+    top: 10px; /* Position en haut */
+    right: 10px; /* Position à droite */
+    padding: 8px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+#fullscreenBtn:hover {
+    background-color: #0056b3;
+}
+
+/* Style pour le mode plein écran */
+#infographieImage.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: contain; /* S'assure que l'image reste proportionnelle */
+    background-color: rgba(0, 0, 0, 0.9); /* Fond sombre pour le mode plein écran */
+    z-index: 1000;
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Ajuster le bouton en mode plein écran */
+#fullscreenBtn.fullscreen {
+    position: fixed;
+    top: 20px; /* Garde le bouton en haut à droite en mode plein écran */
+    right: 20px;
+    z-index: 1001;
+}
+#Infographie {
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+
+
     </style>
 </head>
 <body>
 
 <header>
     <img src="https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/Logo_site.jpg" alt="Logo_site">
-    <h1>Estimation des Prix au m² en France</h1>
+    <h1>Estimation des valeurs foncières au m² en France</h1>
 </header>
 
+<!-- Boutons des onglets -->
 <div class="tab">
-    <button class="tablinks" onclick="openTab(event, 'Map2D')" id="defaultOpen">Carte 2D</button>
-    <button class="tablinks" onclick="openTab(event, 'Map3D')">Carte 3D des prix par commune</button>
+    <button class="tablinks" onclick="openTab(event, 'Accueil')" id="defaultOpen">Accueil</button>
+    <button class="tablinks" onclick="openTab(event, 'Map2D')">Carte 2D</button>
+    <button class="tablinks" onclick="openTab(event, 'Map3D')">Carte 3D</button>
     <button class="tablinks" onclick="openTab(event, 'Histogram')">Histogramme</button>
-    <button class="tablinks" onclick="openTab(event, 'Comparison')">Comparaison 2014-2023</button>
+    <button class="tablinks" onclick="openTab(event, 'Comparison')">Evolution 2014-2023</button>
+    <button class="tablinks" onclick="openTab(event, 'Infographie')">Infographie</button>
 </div>
 
+<!-- Onglet Accueil -->
+<div id="Accueil" class="tabcontent">
+    <h2>Bienvenue sur notre site dédié aux valeurs foncières !</h2>
+    <p class="intro-text">
+        Ce site vous permet de visualiser les prix des <strong>valeurs foncières</strong> en France, à l’échelle des départements et des communes. Il est organisé en plusieurs parties, dont celle sur laquelle vous vous trouvez actuellement : la page d’accueil. C’est ici que vous trouverez toutes les explications nécessaires concernant les différentes sections du site.
+    </p>
+    <p class="intro-text">
+        Les autres onglets contiennent peu (voire pas du tout) de texte explicatif, donc si vous vous sentez un peu perdu·e, n’hésitez pas à revenir ici 😊.
+    </p>
+
+    <div class="section-divider"></div>
+
+    <h3>D’où viennent les données ?</h3>
+    <p>
+        Toutes les cartes que vous allez découvrir ont été réalisées à partir des données <strong>DVF (Demandes de Valeurs Foncières)</strong>, disponibles sur <a href="https://www.data.gouv.fr" target="_blank">data.gouv.fr</a>. Ces données regroupent les informations immobilières (prix, types de biens, surfaces, etc.) par commune et par année, sur la période <strong>2014 à 2023</strong>.
+    </p>
+    <p>
+        Nous avons retravaillé ces données pour pouvoir les exploiter au mieux sur ce site. Les fichiers GeoJSON utilisés pour afficher les communes et départements proviennent également de data.gouv.
+    </p>
+
+    <div class="section-divider"></div>
+
+    <h3>À noter</h3>
+    <p>
+        La base DVF est publique et gérée par la <strong>DGFiP</strong>. Elle présente l’avantage d’être gratuite et transparente, mais elle peut parfois être complexe à utiliser. Certaines transactions, notamment les ventes multilignes (plusieurs biens regroupés), peuvent fausser les résultats.
+    </p>
+    <p>
+        Il existe une version enrichie appelée <strong>DVF+</strong>, proposée par le Cerema, qui structure et géolocalise les données de manière plus fiable. Cependant, nous ne l’avons pas utilisée car nous en avons eu connaissance trop tard. Notre site repose donc uniquement sur la version brute de la DVF, ce qui peut entraîner certaines imprécisions (comme des prix anormalement élevés dans certaines communes).
+    </p>
+
+    <div class="section-divider"></div>
+
+    <h3>Que trouve-t-on dans les onglets ?</h3>
+
+    <div class="tab-description">
+        <h4>🗺️ Onglet 2 — Carte 2D interactive</h4>
+        <p>
+            Vous trouverez ici une carte en 2D de la France, qui affiche les moyennes des valeurs foncières par département. Vous pouvez aussi rechercher une commune pour consulter sa moyenne.
+        </p>
+        <p>
+            L’interface est simple et repose principalement sur le clic de souris ou la recherche par nom. En cliquant sur un département, un menu déroulant s’affiche : il liste toutes ses communes, que vous pouvez trier selon différents critères.
+        </p>
+        <p>
+            Enfin, en cliquant sur une commune, vous verrez apparaître plusieurs infos utiles, dont un lien vers sa page Wikipédia (chaque commune est liée à sa fiche Wikipédia !).
+        </p>
+    </div>
+
+    <div class="tab-description">
+        <h4>🌍 Onglet 3 — Carte 3D</h4>
+        <p>
+            Ici, vous retrouvez les mêmes valeurs foncières que dans l’onglet précédent, mais sous forme de carte 3D. Chaque commune est représentée par un polygone dont la hauteur varie en fonction de la valeur foncière moyenne (c’est ce qu’on appelle l’extrusion avec la variable Z).
+        </p>
+        <p>
+            Vous pouvez filtrer l’affichage en sélectionnant un département dans le menu à gauche : seul le département choisi restera visible. Et comme dans l’onglet précédent, en cliquant sur une commune, des informations s’affichent (cette fois en haut à droite de la carte).
+        </p>
+    </div>
+
+    <div class="tab-description">
+        <h4>📊 Onglet 4 — Histogramme des départements</h4>
+        <p>
+            Cet onglet propose un histogramme comparatif des départements les plus chers et les moins chers. Vous pouvez trier cet histogramme pour une meilleure lecture, et il utilise les mêmes couleurs que les cartes précédentes pour garder une cohérence visuelle.
+        </p>
+        <p>
+            Cela vous permet de faire facilement le lien entre la carte et le graphique.
+        </p>
+    </div>
+
+    <div class="tab-description">
+        <h4>⏳ Onglet 5 — Évolution dans le temps</h4>
+        <p>
+            Cette carte reprend la moyenne des valeurs foncières par département, mais avec une dimension temporelle. Un curseur en haut à gauche permet de revenir dans le passé, jusqu’en 2014. (Les données antérieures ne sont pas disponibles.)
+        </p>
+        <p>
+            En cliquant sur un département, un pop-up affiche les infos principales. Ce pop-up reste visible même si vous changez d’année, ce qui est très pratique pour comparer rapidement les prix entre 2023 et les années précédentes.
+        </p>
+        <p>
+            En bas de cette page, un graphique montre l’évolution des prix moyens en France. Sans surprise, les prix ont augmenté entre 2014 et 2023 📈.
+        </p>
+    </div>
+
+    <div class="tab-description">
+        <h4>🖼️ Onglet 6 — Infographie : focus sur le littoral du Sud-Est</h4>
+        <p>
+            Dans cette dernière partie, vous trouverez une infographie que nous avons réalisée avec Flourish. Elle se concentre sur cinq départements littoraux du Sud-Est : <strong>Gard, Hérault, Bouches-du-Rhône, Var et Alpes-Maritimes</strong>.
+        </p>
+        <p>
+            Notre objectif était de mettre en lumière les écarts de prix entre ces territoires. On observe par exemple une fracture régionale nette entre l’Hérault/Gard (plus abordables) et les Bouches-du-Rhône, le Var et les Alpes-Maritimes (nettement plus chers).
+        </p>
+        <p>
+            L’infographie utilise les mêmes données DVF que le reste du site, pour une cohérence totale.
+        </p>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <p class="outro-text">
+        Pour commencer, sélectionnez un onglet dans la barre de navigation ci-dessus !
+    </p>
+</div>
+
+<!-- Onglet Map2D -->
 <div id="Map2D" class="tabcontent">
     <div id="map"></div>
-</div>
-
-<div id="Map3D" class="tabcontent">
-    <div id="map3D">
-        <div class="loading-spinner" id="loadingSpinner">
-            <div class="spinner"></div>
+    <div id="communeListContainer" class="commune-list-container">
+        <div class="commune-list-header">
+            <h3 id="communeListTitle">Communes</h3>
+            <button id="closeCommuneListBtn">Fermer</button>
+        </div>
+        <div class="sort-controls">
+            <button id="sortAsc">Prix ↑</button>
+            <button id="sortDesc">Prix ↓</button>
+            <button id="sortAlphaAsc">A à Z</button>
+            <button id="sortAlphaDesc">Z à A</button>
+        </div>
+        <div class="commune-list">
+            <ul id="communeList"></ul>
         </div>
     </div>
 </div>
 
-<div id="Histogram" class="tabcontent">
-    <canvas id="priceHistogram" width="800" height="400"></canvas>
+<!-- Onglet Map3D -->
+<div id="Map3D" class="tabcontent">
+    <div id="map3D"></div>
+    <div id="loadingSpinner" class="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+    <!-- Ajout de l'encadré pour les informations de la commune -->
+    <div id="communeInfoBox" class="commune-info-box">
+        <div class="commune-info-header">
+            <h3 id="communeInfoTitle">Informations sur la commune</h3>
+            <button id="closeCommuneInfoBtn">✖</button>
+        </div>
+        <div class="commune-info-content">
+            <p><strong>Nom :</strong> <span id="communeInfoName">Sélectionnez une commune</span></p>
+            <p><strong>Code commune :</strong> <span id="communeInfoCode">N/A</span></p>
+            <p><strong>Prix moyen :</strong> <span id="communeInfoPrice">N/A</span></p>
+            <p><a id="communeInfoWikiLink" href="#" target="_blank">Voir sur Wikipédia</a></p>
+        </div>
+    </div>
 </div>
 
+<!-- Onglet Histogram -->
+<div id="Histogram" class="tabcontent">
+    <!-- Menu de tri -->
+    <div id="histogramControls" class="histogram-controls">
+        <label for="sortOptions"><b>Trier par :</b></label>
+        <select id="sortOptions">
+            <option value="priceDesc">Prix : Plus élevé → Plus bas</option>
+            <option value="priceAsc">Prix : Plus bas → Plus élevé</option>
+            <option value="deptAsc">Département : 01 → 95</option>
+            <option value="deptDesc">Département : 95 → 01</option>
+        </select>
+    </div>
+    <!-- Remplacer div par canvas -->
+    <canvas id="histogramChart"></canvas>
+</div>
+
+<!-- Onglet Comparison -->
 <div id="Comparison" class="tabcontent">
     <div id="comparisonContainer" class="comparison-container">
         <div class="comparison-header">
-            <h2 class="comparison-title">Comparaison des Prix au m² (2014-2023)</h2>
+            <h2 class="comparison-title">Évolution des moyennes des valeurs foncières au m² par département (2014-2023)</h2>
             <div class="comparison-stats">
                 <p><strong>Moyenne nationale :</strong> <span id="nationalAverage">Chargement...</span> €/m²</p>
             </div>
@@ -607,8 +1133,26 @@
     </div>
 </div>
 
-<footer>
-    <p>© 2025 Votre Agence Immobilière - <a href="#">Contactez-nous</a></p>
+<!-- Onglet Infographie -->
+<div id="Infographie" class="tabcontent">
+    <h2>Infographie : Focus sur le littoral du Sud-Est</h2>
+    <p>
+        Cette section présente une infographie mettant en lumière les écarts de prix immobiliers dans cinq départements littoraux du Sud-Est : Gard, Hérault, Bouches-du-Rhône, Var et Alpes-Maritimes.
+    </p>
+    <p>
+        <b>Points clés :</b><br>
+        - Une fracture régionale nette entre l’Hérault/Gard (plus abordables) et les Bouches-du-Rhône, le Var et les Alpes-Maritimes (nettement plus chers).<br>
+        - Visualisation des tendances et des écarts de prix entre ces départements.
+    </p>
+    <div class="infographie-container">
+        <img id="infographieImage" src="https://raw.githubusercontent.com/Aprz00/projet_dataviz/430d10ef18aba5bf2e60b9a6015549c02697a96c/Infographie.png" alt="Infographie sur les prix immobiliers du littoral Sud-Est">
+        <button id="fullscreenBtn" onclick="toggleFullscreen()">Plein écran</button>
+    </div>
+</div>
+
+<!-- Pied de page -->
+<footer class="site-footer">
+    <p>Pour plus d'informations, <a href="https://github.com/Aprz00/projet_dataviz/tree/main" target="_blank" rel="noopener noreferrer">contactez-nous</a> sur GitHub !</p>
 </footer>
 
 <script>
@@ -620,27 +1164,50 @@ let prixCommuneData = {};
 let mapComparison = null;
 let priceTrendChart = null;
 let highlightedDeptLayer = null;
+let currentDeptCode = null; // Pour suivre le département actuellement sélectionné
+let communeDataList = []; // Pour stocker les données des communes à afficher dans le menu
 let deptNames = {};
 let communeNames = {};
 
 // Tab Management
 function openTab(evt, tabName) {
+    console.log("Ouverture de l'onglet :", tabName); // Ajout d'un log pour déboguer
     const tabcontent = document.getElementsByClassName("tabcontent");
     const tablinks = document.getElementsByClassName("tablinks");
 
+    // Cacher tous les onglets
     for (let i = 0; i < tabcontent.length; i++) {
         tabcontent[i].style.display = "none";
+        tabcontent[i].classList.remove("active"); // Retirer la classe active
     }
+
+    // Retirer la classe active de tous les boutons
     for (let i = 0; i < tablinks.length; i++) {
         tablinks[i].className = tablinks[i].className.replace(" active", "");
     }
 
-    document.getElementById(tabName).style.display = "block";
-    evt.currentTarget.className += " active";
+    // Afficher l'onglet sélectionné et ajouter la classe active
+    const selectedTab = document.getElementById(tabName);
+    if (selectedTab) {
+        selectedTab.style.display = "block";
+        selectedTab.classList.add("active"); // Ajouter la classe active
+        evt.currentTarget.className += " active";
+    } else {
+        console.error(`L'onglet avec id='${tabName}' n'a pas été trouvé.`);
+    }
 
-    if (tabName === 'Map3D' && !window.cesiumInitialized) {
-        initCesium();
-        window.cesiumInitialized = true;
+    // Initialisation des onglets spécifiques
+    if (tabName === 'Map2D' && !window.leafletInitialized) {
+        initLeafletMap();
+        window.leafletInitialized = true;
+    } else if (tabName === 'Map3D') {
+        if (!window.cesiumInitialized) {
+            initCesium();
+            window.cesiumInitialized = true;
+        } else if (window.cesiumViewer) {
+            window.cesiumViewer.scene.requestRender();
+            window.cesiumViewer.resize();
+        }
     } else if (tabName === 'Histogram' && !window.histogramInitialized) {
         initHistogram();
         window.histogramInitialized = true;
@@ -650,7 +1217,16 @@ function openTab(evt, tabName) {
     }
 }
 
-document.getElementById("defaultOpen").click();
+// Initialisation de l'onglet par défaut
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM chargé, ouverture de l'onglet par défaut...");
+    const defaultTab = document.getElementById("defaultOpen");
+    if (defaultTab) {
+        defaultTab.click();
+    } else {
+        console.error("L'élément avec id='defaultOpen' n'a pas été trouvé.");
+    }
+});
 
 // Utility Functions
 function getColor(prix) {
@@ -673,14 +1249,34 @@ function getWikipediaUrl(communeName) {
     return `https://fr.wikipedia.org/wiki/${formattedName}`;
 }
 
+// Fonction pour normaliser les chaînes (supprimer les accents)
+function normalizeString(str) {
+    if (!str) return '';
+    return str
+        .normalize('NFD') // Décomposer les caractères accentués
+        .replace(/[\u0300-\u036f]/g, '') // Supprimer les diacritiques
+        .toLowerCase();
+}
+
 // 2D Map (2023)
-document.addEventListener('DOMContentLoaded', function() {
+function initLeafletMap() {
+    console.log("Initialisation de la carte Leaflet pour Map2D...");
+    // Définir les limites géographiques de la France métropolitaine
+    const franceBounds = [
+        [41.5, -5.5], // Coin sud-ouest (lat, lng)
+        [51.5, 9.5]   // Coin nord-est (lat, lng)
+    ];
+
     map = L.map('map', {
         zoomAnimation: true,
         zoomDelta: 0.5,
         zoomSnap: 0.5,
         maxZoom: 14,
-        minZoom: 5
+        minZoom: 5,
+        // Ajouter les limites pour empêcher de sortir de la France métropolitaine
+        maxBounds: franceBounds,
+        maxBoundsViscosity: 1.0, // Empêche complètement le déplacement hors des limites
+        bounceAtZoomLimits: false // Désactive le rebond aux limites de zoom
     }).setView([46.5, 2.0], 5.5);
 
     const initialView = { center: [46.5, 2.0], zoom: 5.5 };
@@ -691,6 +1287,88 @@ document.addEventListener('DOMContentLoaded', function() {
     }).addTo(map);
 
     let prixData = {};
+    let prixCommuneData = {};
+    let searchHighlightedLayer = null; // Variable pour suivre la couche mise en surbrillance
+
+    // Fonction pour calculer le centroïde d'un polygone (approximation simple)
+    function calculateCentroid(coordinates) {
+        let latSum = 0, lngSum = 0, numPoints = 0;
+
+        function processCoords(coords) {
+            coords.forEach(coord => {
+                if (Array.isArray(coord[0])) { // Si c'est un tableau de coordonnées (Polygon ou MultiPolygon)
+                    processCoords(coord);
+                } else { // Si c'est une paire [lng, lat]
+                    lngSum += coord[0];
+                    latSum += coord[1];
+                    numPoints++;
+                }
+            });
+        }
+
+        processCoords(coordinates);
+        return [latSum / numPoints, lngSum / numPoints]; // [lat, lng]
+    }
+
+    // Fonction pour centrer une commune sur la carte
+    function centerCommune(layer, applyOffset = true) {
+        const bounds = layer.getBounds();
+        const center = bounds.getCenter();
+        const desiredZoom = 13;
+
+        // Vérifier que le centre est dans les limites avant de déplacer
+        const boundedCenter = [
+            Math.max(franceBounds[0][0], Math.min(franceBounds[1][0], center.lat)),
+            Math.max(franceBounds[0][1], Math.min(franceBounds[1][1], center.lng))
+        ];
+
+        map.setView(boundedCenter, desiredZoom, { animate: true });
+
+        setTimeout(() => {
+            if (applyOffset) {
+                const container = document.getElementById('communeListContainer');
+                const menuWidth = container ? (container.offsetWidth || 300) : 300;
+                const mapSize = map.getSize();
+                const mapWidth = mapSize.x;
+                const offsetPixels = menuWidth * 0.35;
+                const currentZoom = map.getZoom();
+                const centerPoint = map.project(boundedCenter, currentZoom);
+                centerPoint.x -= offsetPixels;
+                const adjustedCenter = map.unproject(centerPoint, currentZoom);
+
+                // S'assurer que le centre ajusté reste dans les limites
+                const boundedAdjustedCenter = [
+                    Math.max(franceBounds[0][0], Math.min(franceBounds[1][0], adjustedCenter.lat)),
+                    Math.max(franceBounds[0][1], Math.min(franceBounds[1][1], adjustedCenter.lng))
+                ];
+
+                map.setView(boundedAdjustedCenter, desiredZoom, { animate: true });
+            }
+        }, 300);
+    }
+
+    // Fonction pour appliquer un décalage lors de la recherche
+    function adjustCenterForSearch(center, zoom) {
+        setTimeout(() => {
+            const container = document.getElementById('communeListContainer');
+            const menuWidth = container ? (container.offsetWidth || 300) : 300;
+            const mapSize = map.getSize();
+            const mapWidth = mapSize.x;
+            const offsetPixels = menuWidth * 0.35;
+            const currentZoom = map.getZoom();
+            const centerPoint = map.project(center, currentZoom);
+            centerPoint.x -= offsetPixels;
+            const adjustedCenter = map.unproject(centerPoint, currentZoom);
+
+            // S'assurer que le centre ajusté reste dans les limites
+            const boundedAdjustedCenter = [
+                Math.max(franceBounds[0][0], Math.min(franceBounds[1][0], adjustedCenter.lat)),
+                Math.max(franceBounds[0][1], Math.min(franceBounds[1][1], adjustedCenter.lng))
+            ];
+
+            map.setView(boundedAdjustedCenter, zoom, { animate: true });
+        }, 300);
+    }
 
     Promise.all([
         fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/prix_m2_moyenne_par_departement.csv').then(response => response.text()),
@@ -714,47 +1392,77 @@ document.addEventListener('DOMContentLoaded', function() {
             if (code_commune && !isNaN(prix)) prixCommuneData[code_commune] = prix;
         });
 
-        // Store department names
+        // Store department names with normalized version for search
         geojsonData.features.forEach(feature => {
             let code = feature.properties.code.toString().trim();
-            deptNames[code] = feature.properties.nom;
+            let name = feature.properties.nom || 'Nom non défini';
+            deptNames[code] = {
+                name: name,
+                normalizedName: normalizeString(name)
+            };
         });
 
-        // Store commune names and coordinates for search
+        // Store commune names and coordinates for search with normalized version
         communeGeojsonData.features.forEach(feature => {
             let codeCommune = feature.properties.codgeo;
             let communeName = feature.properties.libgeo || 'Nom non défini';
             let depCode = feature.properties.dep ? feature.properties.dep.toString().padStart(2, '0') : null;
             let coordinates = null;
+            let centroid = null;
 
             if (feature.geometry.type === "Polygon") {
-                coordinates = feature.geometry.coordinates[0][0];
+                coordinates = feature.geometry.coordinates[0];
+                centroid = calculateCentroid([coordinates]);
             } else if (feature.geometry.type === "MultiPolygon") {
-                coordinates = feature.geometry.coordinates[0][0][0];
+                coordinates = feature.geometry.coordinates[0][0];
+                centroid = calculateCentroid(feature.geometry.coordinates);
             }
 
-            if (coordinates) {
+            if (centroid) {
                 communeNames[codeCommune] = {
                     name: communeName,
+                    normalizedName: normalizeString(communeName),
                     dep: depCode,
-                    depName: deptNames[depCode] || 'Inconnu',
-                    lat: coordinates[1],
-                    lng: coordinates[0]
+                    depName: deptNames[depCode]?.name || 'Inconnu',
+                    lat: centroid[0],
+                    lng: centroid[1]
                 };
             }
         });
 
-        function getLayerStyle(feature, prixDataSource) {
+        function getLayerStyle(feature, prixDataSource, isHighlighted = false, isFaded = false, isSelected = false) {
             let code = feature.properties.code ? feature.properties.code.toString().trim() : feature.properties.codgeo;
             let prix = prixDataSource[code];
             let fillColor = getColor(prix);
-            let isVisible = true;
 
-            const priceFilter = document.getElementById('priceFilter')?.value;
-            if (priceFilter) {
-                const [min, max] = priceFilter.split('-').map(Number);
-                isVisible = prix >= min && (max ? prix <= max : true);
-                console.log(`Code: ${code}, Prix: ${prix}, Min: ${min}, Max: ${max}, IsVisible: ${isVisible}`); // Log pour déboguer le filtre
+            if (isSelected) {
+                return {
+                    fillColor: fillColor,
+                    weight: 1,
+                    opacity: 1,
+                    color: 'black',
+                    fillOpacity: 0
+                };
+            }
+
+            if (isHighlighted) {
+                return {
+                    fillColor: fillColor,
+                    weight: 3,
+                    opacity: 1,
+                    color: '#FFFFFF',
+                    fillOpacity: 0.9
+                };
+            }
+
+            if (isFaded) {
+                return {
+                    fillColor: fillColor,
+                    weight: 1,
+                    opacity: 0.3,
+                    color: 'black',
+                    fillOpacity: 0.3
+                };
             }
 
             return {
@@ -762,7 +1470,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 weight: 1,
                 opacity: 1,
                 color: 'black',
-                fillOpacity: isVisible ? 0.7 : 0
+                fillOpacity: 0.7
             };
         }
 
@@ -772,17 +1480,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
             departementsLayer = L.geoJSON(geojsonData, {
                 style: function(feature) {
-                    return getLayerStyle(feature, prixData);
+                    const deptCode = feature.properties.code.toString().padStart(2, '0');
+                    return getLayerStyle(feature, prixData, false, false, deptCode === currentDeptCode);
                 },
                 interactive: true,
                 onEachFeature: function(feature, layer) {
                     let code = feature.properties.code.toString().padStart(2, '0');
                     let prix = prixData[code] ? prixData[code].toFixed(1) + " €/m²" : "Donnée non disponible";
-                    let nom = feature.properties.nom || 'Nom non défini';
+                    let nom = deptNames[code]?.name || 'Nom non défini';
 
-                    // Stocker le style initial pour pouvoir le restaurer
-                    const initialStyle = getLayerStyle(feature, prixData);
+                    const initialStyle = getLayerStyle(feature, prixData, false, false, code === currentDeptCode);
                     layer.defaultStyle = initialStyle;
+                    layer.currentStyle = initialStyle;
 
                     const popupContent = `
                         <div class="custom-popup">
@@ -793,21 +1502,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
 
                     layer.bindTooltip(`${nom}<br>${prix}`, { direction: 'top', offset: [0, -10] });
+                    layer.bindPopup(popupContent, {
+                        className: 'custom-popup',
+                        autoPan: true,
+                        closeOnClick: true,
+                        autoClose: true
+                    });
 
                     layer.on('mouseover', function() {
-                        console.log(`Mouseover on ${nom} (Code: ${code})`); // Log pour déboguer l'événement
-                        layer.setStyle({
-                            weight: 3,
-                            color: '#000',
-                            fillOpacity: 1
-                        });
+                        if (layer !== searchHighlightedLayer) {
+                            layer.setStyle({
+                                weight: 3,
+                                color: '#000',
+                                fillOpacity: 1
+                            });
+                        }
                         layer.openTooltip();
                         updateStatsPanel(nom, code, prix);
                     });
 
                     layer.on('mouseout', function() {
-                        console.log(`Mouseout on ${nom} (Code: ${code})`); // Log pour déboguer l'événement
-                        layer.setStyle(layer.defaultStyle);
+                        if (layer !== searchHighlightedLayer) {
+                            layer.setStyle(layer.currentStyle);
+                        }
                         layer.closeTooltip();
                         updateStatsPanel();
                     });
@@ -817,41 +1534,34 @@ document.addEventListener('DOMContentLoaded', function() {
                         const bounds = layer.getBounds();
                         map.fitBounds(bounds, { maxZoom: 9, animate: true });
                         loadCommuneLayer(code);
-                        layer.setStyle({
-                            weight: 1,
-                            color: 'black',
-                            fillOpacity: 0.7
-                        });
-                        layer.bindPopup(popupContent, {
-                            className: 'custom-popup',
-                            autoPan: true,
-                            closeOnClick: true,
-                            autoClose: true
-                        }).openPopup();
+                        highlightSearchResult(code, true);
+                        layer.openPopup();
                     });
 
                     layer.on('popupclose', function() {
-                        layer.setStyle({
-                            weight: 1,
-                            color: 'black',
-                            fillOpacity: 0.7
-                        });
+                        if (layer !== searchHighlightedLayer) {
+                            layer.setStyle(layer.currentStyle);
+                        }
                     });
                 }
             }).addTo(map);
 
-            // Forcer le rafraîchissement des styles après le chargement initial
             departementsLayer.eachLayer(function(layer) {
-                layer.setStyle(getLayerStyle(layer.feature, prixData));
+                const deptCode = layer.feature.properties.code.toString().padStart(2, '0');
+                layer.setStyle(getLayerStyle(layer.feature, prixData, false, false, deptCode === currentDeptCode));
+                layer.currentStyle = getLayerStyle(layer.feature, prixData, false, false, deptCode === currentDeptCode);
             });
 
             updateLegend();
         }
 
-        function loadCommuneLayer(codeDepartement) {
+        function loadCommuneLayer(codeDepartement, displayList = true) {
             if (communesLayer) {
                 map.removeLayer(communesLayer);
             }
+
+            currentDeptCode = codeDepartement;
+            communeDataList = [];
 
             communesLayer = L.geoJSON(communeGeojsonData, {
                 filter: function(feature) {
@@ -859,48 +1569,61 @@ document.addEventListener('DOMContentLoaded', function() {
                     return dep === codeDepartement;
                 },
                 style: function(feature) {
-                    return getLayerStyle(feature, prixCommuneData);
+                    return getLayerStyle(feature, prixCommuneData, false, false);
                 },
                 interactive: true,
                 onEachFeature: function(feature, layer) {
                     let codeCommune = feature.properties.codgeo;
-                    let prix = prixCommuneData[codeCommune] ? prixCommuneData[codeCommune].toFixed(1) + " €/m²" : "Donnée non disponible";
-                    let communeName = feature.properties.libgeo || 'Nom non défini';
+                    let prix = prixCommuneData[codeCommune] ? parseFloat(prixCommuneData[codeCommune]).toFixed(1) : null;
+                    let communeName = communeNames[codeCommune]?.name || 'Nom non défini';
                     let depCode = feature.properties.dep ? feature.properties.dep.toString().padStart(2, '0') : null;
 
-                    // Stocker le style initial pour pouvoir le restaurer
-                    const initialStyle = getLayerStyle(feature, prixCommuneData);
+                    if (prix !== null && !isNaN(parseFloat(prix))) {
+                        communeDataList.push({
+                            code: codeCommune,
+                            name: communeName,
+                            price: parseFloat(prix),
+                            layer: layer
+                        });
+                    }
+
+                    const initialStyle = getLayerStyle(feature, prixCommuneData, false, false);
                     layer.defaultStyle = initialStyle;
+                    layer.currentStyle = initialStyle;
 
                     const popupContent = `
                         <div class="custom-popup">
                             <h3>${communeName}</h3>
                             <p><strong>Code :</strong> ${codeCommune}</p>
-                            <p><strong>Département :</strong> ${deptNames[depCode] || 'Inconnu'} (Dép. ${depCode})</p>
-                            <p><strong>Prix moyen :</strong> ${prix}</p>
+                            <p><strong>Département :</strong> ${deptNames[depCode]?.name || 'Inconnu'} (Dép. ${depCode})</p>
+                            <p><strong>Prix moyen :</strong> ${prix || "Donnée non disponible"} €/m²</p>
                             <a href="${getWikipediaUrl(communeName)}" target="_blank">Voir sur Wikipédia</a>
                         </div>
                     `;
 
-                    layer.bindTooltip(`${communeName}<br>${prix}`, { direction: 'top', offset: [0, -10] });
+                    layer.bindTooltip(`${communeName}<br>${prix || "Donnée non disponible"} €/m²`, { direction: 'top', offset: [0, -10] });
+                    layer.bindPopup(popupContent, {
+                        className: 'custom-popup',
+                        autoPan: true,
+                        closeOnClick: true,
+                        autoClose: true
+                    });
 
                     layer.on('mouseover', function() {
-                        console.log(`Mouseover on commune ${communeName} (Code: ${codeCommune})`); // Log pour déboguer l'événement
-                        if (prixCommuneData[codeCommune] !== undefined) {
+                        if (prixCommuneData[codeCommune] !== undefined && layer !== searchHighlightedLayer) {
                             layer.setStyle({
                                 weight: 3,
                                 color: '#000',
                                 fillOpacity: 1
                             });
                             layer.openTooltip();
-                            updateStatsPanel(communeName, codeCommune, prix, deptNames[depCode]);
+                            updateStatsPanel(communeName, codeCommune, prix || "Donnée non disponible", deptNames[depCode]?.name);
                         }
                     });
 
                     layer.on('mouseout', function() {
-                        console.log(`Mouseout on commune ${communeName} (Code: ${codeCommune})`); // Log pour déboguer l'événement
-                        if (prixCommuneData[codeCommune] !== undefined) {
-                            layer.setStyle(layer.defaultStyle);
+                        if (prixCommuneData[codeCommune] !== undefined && layer !== searchHighlightedLayer) {
+                            layer.setStyle(layer.currentStyle);
                             layer.closeTooltip();
                             updateStatsPanel();
                         }
@@ -908,46 +1631,133 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     layer.on('click', function(e) {
                         L.DomEvent.stopPropagation(e);
-                        map.fitBounds(layer.getBounds(), { maxZoom: 13, animate: true });
-                        layer.setStyle({
-                            weight: 1,
-                            color: 'black',
-                            fillOpacity: 0.7
-                        });
-                        layer.bindPopup(popupContent, {
-                            className: 'custom-popup',
-                            autoPan: true,
-                            closeOnClick: true,
-                            autoClose: true
-                        }).openPopup();
+                        centerCommune(layer);
+                        highlightSearchResult(codeCommune, false);
+                        layer.openPopup();
                     });
 
                     layer.on('popupclose', function() {
-                        layer.setStyle({
-                            weight: 1,
-                            color: 'black',
-                            fillOpacity: 0.7
-                        });
+                        if (layer !== searchHighlightedLayer) {
+                            layer.setStyle(layer.currentStyle);
+                        }
                     });
                 }
             }).addTo(map);
 
-            // Forcer le rafraîchissement des styles après le chargement initial
             communesLayer.eachLayer(function(layer) {
-                layer.setStyle(getLayerStyle(layer.feature, prixCommuneData));
+                layer.setStyle(getLayerStyle(layer.feature, prixCommuneData, false, false));
+                layer.currentStyle = getLayerStyle(layer.feature, prixCommuneData, false, false);
             });
+
+            if (searchHighlightedLayer && !searchHighlightedLayer.feature.properties.code) {
+                highlightSearchResult(searchHighlightedLayer.feature.properties.codgeo, false);
+            }
+
+            if (displayList) {
+                displayCommuneList(codeDepartement);
+            }
+
+            departementsLayer.eachLayer(layer => {
+                const deptCode = layer.feature.properties.code.toString().padStart(2, '0');
+                if (deptCode === currentDeptCode) {
+                    const selectedStyle = getLayerStyle(layer.feature, prixData, false, false, true);
+                    layer.setStyle(selectedStyle);
+                    layer.currentStyle = selectedStyle;
+                } else {
+                    const fadedStyle = getLayerStyle(layer.feature, prixData, false, true);
+                    layer.setStyle(fadedStyle);
+                    layer.currentStyle = fadedStyle;
+                }
+            });
+        }
+
+        function displayCommuneList(deptCode) {
+            const container = document.getElementById('communeListContainer');
+            const title = document.getElementById('communeListTitle');
+            const list = document.getElementById('communeList');
+            const deptName = deptNames[deptCode]?.name || 'Département inconnu';
+
+            title.textContent = `Communes de ${deptName}`;
+            sortCommunes('asc');
+            container.style.display = 'flex';
+        }
+
+        function sortCommunes(order) {
+            const list = document.getElementById('communeList');
+            const sortAscBtn = document.getElementById('sortAsc');
+            const sortDescBtn = document.getElementById('sortDesc');
+            const sortAlphaAscBtn = document.getElementById('sortAlphaAsc');
+            const sortAlphaDescBtn = document.getElementById('sortAlphaDesc');
+
+            if (!communeDataList || communeDataList.length === 0) {
+                list.innerHTML = '<li>Aucune commune disponible</li>';
+                return;
+            }
+
+            sortAscBtn.classList.remove('active');
+            sortDescBtn.classList.remove('active');
+            sortAlphaAscBtn.classList.remove('active');
+            sortAlphaDescBtn.classList.remove('active');
+
+            if (order === 'asc') {
+                sortAscBtn.classList.add('active');
+                communeDataList.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+            } else if (order === 'desc') {
+                sortDescBtn.classList.add('active');
+                communeDataList.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+            } else if (order === 'alphaAsc') {
+                sortAlphaAscBtn.classList.add('active');
+                communeDataList.sort((a, b) => a.name.localeCompare(b.name));
+            } else if (order === 'alphaDesc') {
+                sortAlphaDescBtn.classList.add('active');
+                communeDataList.sort((a, b) => b.name.localeCompare(a.name));
+            }
+
+            list.innerHTML = '';
+            communeDataList.forEach(commune => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${commune.name}</span>
+                    <span class="price">${commune.price ? commune.price.toFixed(1) : 'N/A'} €/m²</span>
+                `;
+                li.onclick = () => {
+                    centerCommune(commune.layer);
+                    highlightSearchResult(commune.code, false);
+                    commune.layer.openPopup();
+                };
+                list.appendChild(li);
+            });
+        }
+
+        function closeCommuneList() {
+            const container = document.getElementById('communeListContainer');
+            container.style.display = 'none';
+            currentDeptCode = null;
+            communeDataList = [];
+
+            departementsLayer.eachLayer(layer => {
+                const style = getLayerStyle(layer.feature, prixData);
+                layer.setStyle(style);
+                layer.currentStyle = style;
+            });
+
+            if (communesLayer) {
+                map.removeLayer(communesLayer);
+                communesLayer = null;
+            }
         }
 
         function updateLegend() {
             const legend = L.control({ position: 'bottomright' });
             legend.onAdd = function() {
                 const div = L.DomUtil.create('div', 'info legend');
-                const grades = [1000, 1500, 2000, 2500, 3000, 3500, 4000];
+                const grades = [4000, 3500, 3000, 2500, 2000, 1500, 1000]; // Inverser l'ordre des seuils
                 let html = `<b>Prix du m² (2023)</b><br>`;
-                html += '<i style="background:#F5F5DC"></i> < 1000 €/m²<br>';
-                for (let i = 0; i < grades.length; i++) {
-                    html += `<i style="background:${getColor(grades[i] + 1)}"></i> ${grades[i]}${grades[i + 1] ? '–' + grades[i + 1] : '+'} €/m²<br>`;
+                html += '<i style="background:#800026"></i> > 4000 €/m²<br>';
+                for (let i = 0; i < grades.length - 1; i++) {
+                    html += `<i style="background:${getColor(grades[i] - 1)}"></i> ${grades[i + 1]}–${grades[i]} €/m²<br>`;
                 }
+                html += '<i style="background:#F5F5DC"></i> < 1000 €/m²<br>';
                 html += '<br><i style="background:#808080"></i> Données non disponibles<br>';
                 div.innerHTML = html;
                 return div;
@@ -956,7 +1766,79 @@ document.addEventListener('DOMContentLoaded', function() {
             map._legend = legend.addTo(map);
         }
 
-        // Search Control
+        function highlightSearchResult(code, isDepartment) {
+            if (searchHighlightedLayer) {
+                departementsLayer.eachLayer(layer => {
+                    const style = getLayerStyle(layer.feature, prixData, false, false, layer.feature.properties.code.toString().padStart(2, '0') === currentDeptCode);
+                    layer.setStyle(style);
+                    layer.currentStyle = style;
+                });
+                if (communesLayer) {
+                    communesLayer.eachLayer(layer => {
+                        const style = getLayerStyle(layer.feature, prixCommuneData, layer === searchHighlightedLayer);
+                        layer.setStyle(style);
+                        layer.currentStyle = style;
+                    });
+                }
+                searchHighlightedLayer = null;
+            }
+
+            if (isDepartment) {
+                searchHighlightedLayer = Object.values(departementsLayer._layers).find(layer =>
+                    layer.feature.properties.code.toString().padStart(2, '0') === code
+                );
+                if (searchHighlightedLayer) {
+                    const highlightedStyle = getLayerStyle(searchHighlightedLayer.feature, prixData, true);
+                    searchHighlightedLayer.setStyle(highlightedStyle);
+                    searchHighlightedLayer.currentStyle = highlightedStyle;
+                    searchHighlightedLayer.openPopup();
+                }
+            } else {
+                if (communesLayer) {
+                    searchHighlightedLayer = Object.values(communesLayer._layers).find(layer =>
+                        layer.feature.properties.codgeo === code
+                    );
+                    if (searchHighlightedLayer) {
+                        const highlightedStyle = getLayerStyle(searchHighlightedLayer.feature, prixCommuneData, true);
+                        searchHighlightedLayer.setStyle(highlightedStyle);
+                        searchHighlightedLayer.currentStyle = highlightedStyle;
+                        searchHighlightedLayer.openPopup();
+                    }
+                }
+            }
+
+            departementsLayer.eachLayer(layer => {
+                const deptCode = layer.feature.properties.code.toString().padStart(2, '0');
+                if (deptCode === currentDeptCode) {
+                    const selectedStyle = getLayerStyle(layer.feature, prixData, false, false, true);
+                    layer.setStyle(selectedStyle);
+                    layer.currentStyle = selectedStyle;
+                } else if (layer !== searchHighlightedLayer) {
+                    const fadedStyle = getLayerStyle(layer.feature, prixData, false, true);
+                    layer.setStyle(fadedStyle);
+                    layer.currentStyle = fadedStyle;
+                }
+            });
+
+            if (communesLayer) {
+                if (isDepartment) {
+                    communesLayer.eachLayer(layer => {
+                        const style = getLayerStyle(layer.feature, prixCommuneData, false, false);
+                        layer.setStyle(style);
+                        layer.currentStyle = style;
+                    });
+                } else {
+                    communesLayer.eachLayer(layer => {
+                        if (layer !== searchHighlightedLayer) {
+                            const fadedStyle = getLayerStyle(layer.feature, prixCommuneData, false, true);
+                            layer.setStyle(fadedStyle);
+                            layer.currentStyle = fadedStyle;
+                        }
+                    });
+                }
+            }
+        }
+
         const searchControl = L.control({ position: 'topleft' });
         searchControl.onAdd = function() {
             const div = L.DomUtil.create('div', 'leaflet-control-search');
@@ -970,27 +1852,79 @@ document.addEventListener('DOMContentLoaded', function() {
         searchControl.addTo(map);
 
         document.getElementById('mapSearch').addEventListener('input', function() {
-            const input = this.value.toLowerCase();
+            const input = this.value;
+            const normalizedInput = normalizeString(input);
             const suggestions = document.getElementById('mapSuggestions');
             suggestions.innerHTML = '';
 
-            if (input.length < 2) {
+            if (input.length === 0) {
                 suggestions.style.display = 'none';
+                if (searchHighlightedLayer) {
+                    departementsLayer.eachLayer(layer => {
+                        const style = getLayerStyle(layer.feature, prixData, false, false, layer.feature.properties.code.toString().padStart(2, '0') === currentDeptCode);
+                        layer.setStyle(style);
+                        layer.currentStyle = style;
+                    });
+                    if (communesLayer) {
+                        communesLayer.eachLayer(layer => {
+                            const style = getLayerStyle(layer.feature, prixCommuneData);
+                            layer.setStyle(style);
+                            layer.currentStyle = style;
+                        });
+                    }
+                    searchHighlightedLayer = null;
+                }
                 return;
             }
 
-            // Search departments
-            const deptMatches = Object.entries(deptNames).filter(([code, name]) =>
-                code.includes(input) || name.toLowerCase().includes(input)
+            if (input.length < 2) {
+                suggestions.style.display = 'none';
+                if (searchHighlightedLayer) {
+                    departementsLayer.eachLayer(layer => {
+                        const deptCode = layer.feature.properties.code.toString().padStart(2, '0');
+                        if (deptCode === currentDeptCode) {
+                            const selectedStyle = getLayerStyle(layer.feature, prixData, false, false, true);
+                            layer.setStyle(selectedStyle);
+                            layer.currentStyle = selectedStyle;
+                        } else if (layer !== searchHighlightedLayer) {
+                            const fadedStyle = getLayerStyle(layer.feature, prixData, false, true);
+                            layer.setStyle(fadedStyle);
+                            layer.currentStyle = fadedStyle;
+                        }
+                    });
+                    if (communesLayer) {
+                        if (searchHighlightedLayer.feature.properties.codgeo) {
+                            communesLayer.eachLayer(layer => {
+                                if (layer !== searchHighlightedLayer) {
+                                    const fadedStyle = getLayerStyle(layer.feature, prixCommuneData, false, true);
+                                    layer.setStyle(fadedStyle);
+                                    layer.currentStyle = fadedStyle;
+                                }
+                            });
+                        } else {
+                            communesLayer.eachLayer(layer => {
+                                const style = getLayerStyle(layer.feature, prixCommuneData, false, false);
+                                layer.setStyle(style);
+                                layer.currentStyle = style;
+                            });
+                        }
+                    }
+                }
+                return;
+            }
+
+            const deptMatches = Object.entries(deptNames).filter(([code, info]) =>
+                code.includes(input) || info.normalizedName.includes(normalizedInput)
             );
 
-            // Search communes
             const communeMatches = Object.entries(communeNames).filter(([code, info]) =>
-                info.name.toLowerCase().includes(input) || code.includes(input)
+                code.includes(input) || info.normalizedName.includes(normalizedInput)
             );
 
-            const matches = [...deptMatches.map(([code, name]) => ({ type: 'dept', code, name })),
-                            ...communeMatches.map(([code, info]) => ({ type: 'commune', code, ...info }))];
+            const matches = [
+                ...deptMatches.map(([code, info]) => ({ type: 'dept', code, name: info.name })),
+                ...communeMatches.map(([code, info]) => ({ type: 'commune', code, ...info }))
+            ];
 
             matches.slice(0, 5).forEach(match => {
                 const li = document.createElement('li');
@@ -1001,12 +1935,31 @@ document.addEventListener('DOMContentLoaded', function() {
                             layer.feature.properties.code.toString().padStart(2, '0') === match.code
                         );
                         if (feature) {
-                            map.fitBounds(feature.getBounds(), { maxZoom: 9, animate: true });
-                            loadCommuneLayer(match.code);
+                            const bounds = feature.getBounds();
+                            map.fitBounds(bounds, { maxZoom: 9, animate: true });
+                            const center = bounds.getCenter();
+                            adjustCenterForSearch(center, map.getZoom());
+                            loadCommuneLayer(match.code, true);
+                            highlightSearchResult(match.code, true);
                         }
                     } else {
-                        map.setView([match.lat, match.lng], 13, { animate: true });
-                        loadCommuneLayer(match.dep);
+                        const feature = Object.values(communesLayer?._layers || {}).find(layer =>
+                            layer?.feature?.properties?.codgeo === match.code
+                        );
+                        if (feature) {
+                            centerCommune(feature, true);
+                        } else {
+                            const center = [match.lat, match.lng];
+                            // S'assurer que le centre est dans les limites
+                            const boundedCenter = [
+                                Math.max(franceBounds[0][0], Math.min(franceBounds[1][0], center[0])),
+                                Math.max(franceBounds[0][1], Math.min(franceBounds[1][1], center[1]))
+                            ];
+                            map.setView(boundedCenter, 13, { animate: true });
+                            adjustCenterForSearch(boundedCenter, 13);
+                        }
+                        loadCommuneLayer(match.dep, false);
+                        highlightSearchResult(match.code, false);
                     }
                     document.getElementById('mapSearch').value = '';
                     suggestions.style.display = 'none';
@@ -1017,7 +1970,6 @@ document.addEventListener('DOMContentLoaded', function() {
             suggestions.style.display = matches.length > 0 ? 'block' : 'none';
         });
 
-        // Reset View Control
         const resetControl = L.control({ position: 'topleft' });
         resetControl.onAdd = function() {
             const div = L.DomUtil.create('div', 'leaflet-control-reset');
@@ -1025,54 +1977,29 @@ document.addEventListener('DOMContentLoaded', function() {
             L.DomEvent.on(div, 'click', () => {
                 map.setView(initialView.center, initialView.zoom, { animate: true });
                 if (communesLayer) map.removeLayer(communesLayer);
+                if (searchHighlightedLayer) {
+                    departementsLayer.eachLayer(layer => {
+                        const style = getLayerStyle(layer.feature, prixData);
+                        layer.setStyle(style);
+                        layer.currentStyle = style;
+                    });
+                    if (communesLayer) {
+                        communesLayer.eachLayer(layer => {
+                            const style = getLayerStyle(layer.feature, prixCommuneData);
+                            layer.setStyle(style);
+                            layer.currentStyle = style;
+                        });
+                    }
+                    searchHighlightedLayer = null;
+                }
+                closeCommuneList();
+                currentDeptCode = null;
             });
             L.DomEvent.disableClickPropagation(div);
             return div;
         };
         resetControl.addTo(map);
 
-        // Price Filter Control
-        const priceFilterControl = L.control({ position: 'topright' });
-        priceFilterControl.onAdd = function() {
-            const div = L.DomUtil.create('div', 'leaflet-control-price-filter');
-            div.innerHTML = `
-                <label>Filtrer par prix :</label>
-                <select id="priceFilter">
-                    <option value="">Tous les prix</option>
-                    <option value="0-1000">0 - 1000 €/m²</option>
-                    <option value="1000-1500">1000 - 1500 €/m²</option>
-                    <option value="1500-2000">1500 - 2000 €/m²</option>
-                    <option value="2000-2500">2000 - 2500 €/m²</option>
-                    <option value="2500-3000">2500 - 3000 €/m²</option>
-                    <option value="3000-3500">3000 - 3500 €/m²</option>
-                    <option value="3500-4000">3500 - 4000 €/m²</option>
-                    <option value="4000">> 4000 €/m²</option>
-                </select>
-            `;
-            L.DomEvent.on(div.querySelector('#priceFilter'), 'change', () => {
-                console.log("Price filter changed to:", document.getElementById('priceFilter').value); // Log pour déboguer le changement de filtre
-                // Mettre à jour les styles des couches existantes sans recréer les couches
-                if (departementsLayer) {
-                    departementsLayer.eachLayer(function(layer) {
-                        const newStyle = getLayerStyle(layer.feature, prixData);
-                        layer.setStyle(newStyle);
-                        layer.defaultStyle = newStyle; // Mettre à jour le style par défaut
-                    });
-                }
-                if (communesLayer) {
-                    communesLayer.eachLayer(function(layer) {
-                        const newStyle = getLayerStyle(layer.feature, prixCommuneData);
-                        layer.setStyle(newStyle);
-                        layer.defaultStyle = newStyle; // Mettre à jour le style par défaut
-                    });
-                }
-            });
-            L.DomEvent.disableClickPropagation(div);
-            return div;
-        };
-        priceFilterControl.addTo(map);
-
-        // Stats Panel
         const statsPanel = L.control({ position: 'bottomleft' });
         statsPanel.onAdd = function() {
             const div = L.DomUtil.create('div', 'leaflet-control-stats');
@@ -1097,7 +2024,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (depName) {
-                // Commune stats
                 statsPanel.innerHTML = `
                     <h4>Commune : ${name}</h4>
                     <p><strong>Code :</strong> ${code}</p>
@@ -1105,7 +2031,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p><strong>Prix moyen :</strong> ${prix}</p>
                 `;
             } else {
-                // Department stats
                 const avgPrice = Object.values(prixData).reduce((a, b) => a + b, 0) / Object.keys(prixData).length;
                 statsPanel.innerHTML = `
                     <h4>Département : ${name}</h4>
@@ -1116,14 +2041,39 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        const closeCommuneListBtn = document.getElementById('closeCommuneListBtn');
+        const sortAscBtn = document.getElementById('sortAsc');
+        const sortDescBtn = document.getElementById('sortDesc');
+        const sortAlphaAscBtn = document.getElementById('sortAlphaAsc');
+        const sortAlphaDescBtn = document.getElementById('sortAlphaDesc');
+
+        if (closeCommuneListBtn) {
+            closeCommuneListBtn.addEventListener('click', closeCommuneList);
+        }
+
+        if (sortAscBtn) {
+            sortAscBtn.addEventListener('click', () => sortCommunes('asc'));
+        }
+
+        if (sortDescBtn) {
+            sortDescBtn.addEventListener('click', () => sortCommunes('desc'));
+        }
+
+        if (sortAlphaAscBtn) {
+            sortAlphaAscBtn.addEventListener('click', () => sortCommunes('alphaAsc'));
+        }
+
+        if (sortAlphaDescBtn) {
+            sortAlphaDescBtn.addEventListener('click', () => sortCommunes('alphaDesc'));
+        }
+
         updateLayer();
     }).catch(error => {
         console.error('Erreur lors du chargement des données initiales pour Leaflet :', error);
     });
-});
+}
 
-// 3D Map (Cesium)
-// 3D Map (Cesium)
+// MAP 3D (CESIUM)
 function initCesium() {
     const loadingSpinner = document.getElementById('loadingSpinner');
     loadingSpinner.style.display = 'block';
@@ -1138,8 +2088,13 @@ function initCesium() {
         navigationHelpButton: true,
         animation: false,
         timeline: false,
-        fullscreenButton: true
+        fullscreenButton: false, // Désactiver le bouton plein écran
+        infoBox: false,
+        selectionIndicator: false
     });
+
+    // Stocker le viewer globalement pour y accéder plus tard
+    window.cesiumViewer = viewer;
 
     viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#87CEEB');
     viewer.camera.flyTo({
@@ -1187,35 +2142,42 @@ function initCesium() {
                 const fillColor = prix !== undefined ? Cesium.Color.fromCssColorString(getColor(prix)).withAlpha(1.0) : Cesium.Color.fromCssColorString('#808080').withAlpha(1.0);
                 entity.polygon.material = fillColor;
                 entity.polygon.outline = true;
-                // Modifier ici : aligner la couleur du contour avec celle du remplissage
                 entity.polygon.outlineColor = fillColor;
                 entity.polygon.extrudedHeight = height;
                 entity.polygon.height = 0;
 
-                const communeName = entity.properties._libgeo ? entity.properties._libgeo._value : 'Nom non défini';
-                const prixText = prix !== undefined ? prix.toFixed(1) + " €/m²" : "Donnée non disponible";
-                entity.description = `
-                    <div class="custom-popup">
-                        <h3>${communeName}</h3>
-                        <p><strong>Code commune :</strong> ${code}</p>
-                        <p><strong>Prix moyen :</strong> ${prixText}</p>
-                        <a href="${getWikipediaUrl(communeName)}" target="_blank">Voir sur Wikipédia</a>
-                    </div>
-                `;
+                // Ajouter un gestionnaire de clic pour afficher les infos dans l'encadré
+                entity.properties.clickHandler = new Cesium.CallbackProperty(() => {
+                    const communeName = entity.properties._libgeo ? entity.properties._libgeo._value : 'Nom non défini';
+                    const prixText = prix !== undefined ? prix.toFixed(1) + " €/m²" : "Donnée non disponible";
+                    showCommuneInfo(communeName, code, prixText);
+                }, false);
             });
+
+            // Activer la sélection au clic
+            const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+            handler.setInputAction(function (click) {
+                const pickedObject = viewer.scene.pick(click.position);
+                if (Cesium.defined(pickedObject) && pickedObject.id && pickedObject.id.properties.clickHandler) {
+                    pickedObject.id.properties.clickHandler.getValue();
+                } else {
+                    // Cacher l'encadré si on clique ailleurs
+                    hideCommuneInfo();
+                }
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
             const legendDiv = document.createElement('div');
             legendDiv.id = 'legend3D';
             legendDiv.innerHTML = `
                 <b>Prix du m²</b><br>
-                <div><span style="display:inline-block;width:18px;height:18px;background:#F5F5DC"></span> < 1000 €/m²</div>
-                <div><span style="display:inline-block;width:18px;height:18px;background:#FED976"></span> 1000–1500 €/m²</div>
-                <div><span style="display:inline-block;width:18px;height:18px;background:#FEB24C"></span> 1500–2000 €/m²</div>
-                <div><span style="display:inline-block;width:18px;height:18px;background:#FD8D3C"></span> 2000–2500 €/m²</div>
-                <div><span style="display:inline-block;width:18px;height:18px;background:#FC4E2A"></span> 2500–3000 €/m²</div>
-                <div><span style="display:inline-block;width:18px;height:18px;background:#E31A1C"></span> 3000–3500 €/m²</div>
-                <div><span style="display:inline-block;width:18px;height:18px;background:#BD0026"></span> 3500–4000 €/m²</div>
                 <div><span style="display:inline-block;width:18px;height:18px;background:#800026"></span> > 4000 €/m²</div>
+                <div><span style="display:inline-block;width:18px;height:18px;background:#BD0026"></span> 4000–3500 €/m²</div>
+                <div><span style="display:inline-block;width:18px;height:18px;background:#E31A1C"></span> 3500–3000 €/m²</div>
+                <div><span style="display:inline-block;width:18px;height:18px;background:#FC4E2A"></span> 3000–2500 €/m²</div>
+                <div><span style="display:inline-block;width:18px;height:18px;background:#FD8D3C"></span> 2500–2000 €/m²</div>
+                <div><span style="display:inline-block;width:18px;height:18px;background:#FEB24C"></span> 2000–1500 €/m²</div>
+                <div><span style="display:inline-block;width:18px;height:18px;background:#FED976"></span> 1500–1000 €/m²</div>
+                <div><span style="display:inline-block;width:18px;height:18px;background:#F5F5DC"></span> < 1000 €/m²</div>
                 <br><div><span style="display:inline-block;width:18px;height:18px;background:#808080"></span> Données non disponibles</div>
             `;
             document.getElementById('map3D').appendChild(legendDiv);
@@ -1260,6 +2222,10 @@ function initCesium() {
             document.getElementById('map3D').appendChild(controlsDiv);
         });
 
+        // Gestionnaire pour le bouton de fermeture
+        const closeCommuneInfoBtn = document.getElementById('closeCommuneInfoBtn');
+        closeCommuneInfoBtn.addEventListener('click', hideCommuneInfo);
+
         loadingSpinner.style.display = 'none';
     }).catch(error => {
         console.error('Erreur lors du chargement des données pour Cesium :', error);
@@ -1291,6 +2257,28 @@ function initCesium() {
 
         return Cesium.Rectangle.fromDegrees(minLon, minLat, maxLon, maxLat);
     }
+
+    // Fonction pour afficher les informations dans l'encadré
+    function showCommuneInfo(name, code, price) {
+        const infoBox = document.getElementById('communeInfoBox');
+        const nameElement = document.getElementById('communeInfoName');
+        const codeElement = document.getElementById('communeInfoCode');
+        const priceElement = document.getElementById('communeInfoPrice');
+        const wikiLink = document.getElementById('communeInfoWikiLink');
+
+        nameElement.textContent = name;
+        codeElement.textContent = code;
+        priceElement.textContent = price;
+        wikiLink.href = getWikipediaUrl(name);
+
+        infoBox.style.display = 'block';
+    }
+
+    // Fonction pour masquer l'encadré
+    function hideCommuneInfo() {
+        const infoBox = document.getElementById('communeInfoBox');
+        infoBox.style.display = 'none';
+    }
 }
 
 // Histogram
@@ -1298,89 +2286,107 @@ function initHistogram() {
     Promise.all([
         fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/prix_m2_moyenne_par_departement.csv').then(response => response.text()),
         fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/contour-des-departements.geojson').then(response => response.json())
-    ]).then(([csvText, geojsonData]) => {
-        let prixData = {};
+    ]).then(([csvText, deptGeojsonData]) => {
+        let rows = csvText.split("\n").map(row => row.split(";"));
+        let deptData = [];
         let deptNames = {};
 
-        let rows = csvText.split("\n").map(row => row.split(";"));
-        rows.forEach(row => {
-            let code_dep = row[0]?.trim();
-            let prix = parseFloat(row[1]);
-            if (code_dep && !isNaN(prix)) prixData[code_dep] = prix;
-        });
-
-        geojsonData.features.forEach(feature => {
-            let code = feature.properties.code.toString().trim();
+        deptGeojsonData.features.forEach(feature => {
+            const code = feature.properties.code.toString().padStart(2, '0');
             deptNames[code] = feature.properties.nom;
         });
 
-                let entries = Object.entries(prixData).sort((a, b) => {
-            let codeA = a[0], codeB = b[0];
-            if (codeA === "2A" || codeA === "2B") return codeB.startsWith("2") ? (codeA === "2A" ? -1 : 1) : -1;
-            if (codeB === "2A" || codeB === "2B") return codeA.startsWith("2") ? (codeB === "2A" ? 1 : -1) : 1;
-            return parseInt(codeA) - parseInt(codeB);
+        rows.forEach(row => {
+            let code_dept = row[0]?.trim().padStart(2, '0');
+            let prix = parseFloat(row[1]);
+            if (code_dept && !isNaN(prix) && deptNames[code_dept]) {
+                deptData.push({ code: code_dept, prix: prix, nom: deptNames[code_dept] });
+            }
         });
 
-        const labels = entries.map(entry => `Dép. ${entry[0]}`);
-        const data = entries.map(entry => entry[1]);
-        const codes = entries.map(entry => entry[0]);
+        // Fonction pour trier et mettre à jour l'histogramme
+        function updateHistogram() {
+            const sortOption = document.getElementById('sortOptions').value;
 
-        const ctx = document.getElementById('priceHistogram').getContext('2d');
-        new Chart(ctx, {
+            let sortedData = [...deptData];
+
+            // Appliquer le tri selon l'option sélectionnée
+            if (sortOption === 'priceAsc') {
+                sortedData.sort((a, b) => a.prix - b.prix);
+            } else if (sortOption === 'priceDesc') {
+                sortedData.sort((a, b) => b.prix - a.prix);
+            } else if (sortOption === 'deptAsc') {
+                sortedData.sort((a, b) => a.code.localeCompare(b.code));
+            } else if (sortOption === 'deptDesc') {
+                sortedData.sort((a, b) => b.code.localeCompare(a.code));
+            }
+
+            // Mettre à jour les données de l'histogramme
+            const labels = sortedData.map(d => `${d.nom} (${d.code})`);
+            const prices = sortedData.map(d => d.prix);
+            const colors = prices.map(prix => getColor(prix));
+
+            histogramChart.data.labels = labels;
+            histogramChart.data.datasets[0].data = prices;
+            histogramChart.data.datasets[0].backgroundColor = colors;
+            histogramChart.data.datasets[0].borderColor = colors;
+            histogramChart.update();
+        }
+
+        // Créer l'histogramme initial
+        const ctx = document.getElementById('histogramChart').getContext('2d');
+        const histogramChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: labels,
+                labels: deptData.map(d => `${d.nom} (${d.code})`),
                 datasets: [{
-                    label: 'Prix au m² (€)',
-                    data: data,
-                    backgroundColor: 'rgba(52, 152, 219, 0.8)',
-                    borderColor: 'rgba(52, 152, 219, 1)',
-                    borderWidth: 1,
-                    borderRadius: 4
+                    label: 'Prix moyen au m² (€)',
+                    data: deptData.map(d => d.prix),
+                    backgroundColor: deptData.map(d => getColor(d.prix)),
+                    borderColor: deptData.map(d => getColor(d.prix)),
+                    borderWidth: 1
                 }]
             },
             options: {
+                responsive: true,
+                maintainAspectRatio: false,
                 scales: {
-                    y: { beginAtZero: true, title: { display: true, text: 'Prix au m² (€)' } },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Prix moyen au m² (€)',
+                            font: { size: 14, family: 'Poppins' }
+                        },
+                        grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                    },
                     x: {
-                        title: { display: true, text: 'Départements' },
-                        ticks: { maxRotation: 90, minRotation: 90, callback: (value, index) => index % 2 === 0 ? labels[index] : '' }
+                        title: {
+                            display: true,
+                            text: 'Départements',
+                            font: { size: 14, family: 'Poppins' }
+                        },
+                        ticks: { autoSkip: false, maxRotation: 90, minRotation: 90, font: { size: 10 } }
                     }
                 },
                 plugins: {
-                    title: { display: true, text: 'Prix moyen au m² par département en France', font: { size: 18 } },
+                    legend: { display: false },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                let index = context.dataIndex;
-                                let code = codes[index];
-                                let nom = deptNames[code] || "Nom non disponible";
-                                let prix = context.parsed.y.toFixed(1);
-                                return `${nom} (Dép. ${code}) : ${prix} €/m²`;
+                                return `Prix moyen : ${context.raw.toFixed(1)} €/m²`;
                             }
                         }
                     }
-                },
-                onClick: function(event, elements) {
-                    if (elements.length > 0) {
-                        let index = elements[0].index;
-                        let code = codes[index];
-                        openTab({ currentTarget: document.getElementsByClassName("tablinks")[0] }, 'Map2D');
-                        setTimeout(() => {
-                            const feature = Object.values(departementsLayer._layers).find(layer => 
-                                layer.feature.properties.code.toString().padStart(2, '0') === code
-                            );
-                            if (feature) {
-                                map.fitBounds(feature.getBounds(), { maxZoom: 9, animate: true });
-                                loadCommuneLayer(code);
-                            }
-                        }, 1000);
-                    }
-                },
-                maintainAspectRatio: false,
-                responsive: true
+                }
             }
         });
+
+        // Ajouter un écouteur d'événements pour le menu de tri
+        document.getElementById('sortOptions').addEventListener('change', updateHistogram);
+
+        // Stocker le graphique pour une utilisation future
+        window.histogramChart = histogramChart;
     }).catch(error => {
         console.error('Erreur lors du chargement des données pour l\'histogramme :', error);
     });
@@ -1388,36 +2394,35 @@ function initHistogram() {
 
 // Comparison Tab (2014-2023)
 function initComparison() {
+    // Définir les limites géographiques de la France métropolitaine
+    const franceBounds = [
+        [41.5, -5.5], // Coin sud-ouest (lat, lng)
+        [51.5, 9.5]   // Coin nord-est (lat, lng)
+    ];
+
     mapComparison = L.map('mapComparison', {
         zoomAnimation: true,
         zoomDelta: 0.5,
         zoomSnap: 0.5,
         maxZoom: 10,
-        minZoom: 5
+        minZoom: 5,
+        // Ajouter les limites pour empêcher de sortir de la France métropolitaine
+        maxBounds: franceBounds,
+        maxBoundsViscosity: 1.0, // Empêche complètement le déplacement hors des limites
+        bounceAtZoomLimits: false // Désactive le rebond aux limites de zoom
     }).setView([46.5, 2.0], 5.5);
+
+    const initialViewComparison = { center: [46.5, 2.0], zoom: 5.5 }; // Vue initiale pour la carte de comparaison
 
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles © Esri — Esri, DeLorme, NAVTEQ',
         maxZoom: 16
     }).addTo(mapComparison);
 
-    let departementsLayer = null;
     let prixDataByYear = {};
-    let deptNames = {};
     let deptGeojsonData = null;
+    let searchHighlightedLayer = null; // Variable pour suivre la couche mise en surbrillance dans la carte de comparaison
     const years = Array.from({ length: 2023 - 2014 + 1 }, (_, i) => 2014 + i);
-
-    // Load Department Names
-    fetch('https://raw.githubusercontent.com/Aprz00/projet_dataviz/main/contour-des-departements.geojson')
-        .then(response => response.json())
-        .then(geojsonData => {
-            geojsonData.features.forEach(feature => {
-                let code = feature.properties.code.toString().padStart(2, '0');
-                deptNames[code] = feature.properties.nom || 'Nom non défini';
-            });
-        }).catch(error => {
-            console.error('Erreur lors du chargement des noms des départements :', error);
-        });
 
     const fetchPromises = years.map(year => {
         let url = year === 2014 ? 
@@ -1440,6 +2445,16 @@ function initComparison() {
         ...fetchPromises
     ]).then(([countriesGeojson, deptGeojsonDataResponse, ...yearData]) => {
         deptGeojsonData = deptGeojsonDataResponse;
+
+        // Load Department Names with normalized version for search
+        deptGeojsonData.features.forEach(feature => {
+            let code = feature.properties.code.toString().padStart(2, '0');
+            let name = feature.properties.nom || 'Nom non défini';
+            deptNames[code] = {
+                name: name,
+                normalizedName: normalizeString(name) // Ajout de la version normalisée
+            };
+        });
 
         L.geoJSON(countriesGeojson, {
             style: { fillColor: '#f0f0f0', weight: 1, opacity: 1, color: '#666', fillOpacity: 0.8 }
@@ -1464,26 +2479,108 @@ function initComparison() {
             });
         });
 
+        // Fonction pour obtenir le style d'une couche dans la carte de comparaison
+        function getComparisonLayerStyle(feature, prixData, isHighlighted = false, isFaded = false) {
+            let code = feature.properties.code.toString().trim();
+            let prix = prixData[code];
+            let fillColor = getColor(prix);
+
+            if (isHighlighted) {
+                return {
+                    fillColor: fillColor,
+                    weight: 3,
+                    opacity: 1,
+                    color: '#FFFFFF', // Contour blanc pour la surbrillance
+                    fillOpacity: 0.9
+                };
+            }
+
+            if (isFaded) {
+                return {
+                    fillColor: fillColor,
+                    weight: 1,
+                    opacity: 0.15,
+                    color: 'black',
+                    fillOpacity: 0.15
+                };
+            }
+
+            return {
+                fillColor: prix !== undefined ? fillColor : '#808080',
+                weight: 1,
+                opacity: 1,
+                color: 'black',
+                fillOpacity: 0.7
+            };
+        }
+
+        // Fonction pour mettre en surbrillance un département dans la carte de comparaison
+        function highlightComparisonDepartment(code) {
+            // Réinitialiser l'ancienne surbrillance
+            if (searchHighlightedLayer) {
+                departementsLayer.eachLayer(layer => {
+                    const year = document.getElementById('yearSlider').value;
+                    const prixData = prixDataByYear[year] || {};
+                    const style = getComparisonLayerStyle(layer.feature, prixData);
+                    layer.setStyle(style);
+                    layer.currentStyle = style;
+                });
+                searchHighlightedLayer = null;
+            }
+
+            // Trouver la couche correspondante
+            searchHighlightedLayer = Object.values(departementsLayer._layers).find(layer =>
+                layer.feature.properties.code.toString().padStart(2, '0') === code
+            );
+
+            if (searchHighlightedLayer) {
+                const year = document.getElementById('yearSlider').value;
+                const prixData = prixDataByYear[year] || {};
+                const highlightedStyle = getComparisonLayerStyle(searchHighlightedLayer.feature, prixData, true);
+                searchHighlightedLayer.setStyle(highlightedStyle);
+                searchHighlightedLayer.currentStyle = highlightedStyle;
+                searchHighlightedLayer.openPopup(); // Ouvre le popup automatiquement
+            }
+
+            // Estomper les autres couches
+            departementsLayer.eachLayer(layer => {
+                if (layer !== searchHighlightedLayer) {
+                    const year = document.getElementById('yearSlider').value;
+                    const prixData = prixDataByYear[year] || {};
+                    const fadedStyle = getComparisonLayerStyle(layer.feature, prixData, false, true);
+                    layer.setStyle(fadedStyle);
+                    layer.currentStyle = fadedStyle;
+                }
+            });
+        }
+
         function updateLayer(year) {
-            if (departementsLayer) mapComparison.removeLayer(departementsLayer);
+            if (departementsLayer) {
+                mapComparison.removeLayer(departementsLayer);
+                departementsLayer = null; // Assurez-vous que la couche est bien réinitialisée
+            }
 
             let prixData = prixDataByYear[year] || {};
             departementsLayer = L.geoJSON(deptGeojsonData, {
                 style: function(feature) {
-                    let code = feature.properties.code.toString().trim();
-                    let prix = prixData[code];
-                    return {
-                        fillColor: prix !== undefined ? getColor(prix) : '#808080',
-                        weight: 1,
-                        opacity: 1,
-                        color: 'black',
-                        fillOpacity: 0.7
-                    };
+                    return getComparisonLayerStyle(feature, prixData);
                 },
                 onEachFeature: function(feature, layer) {
                     let code = feature.properties.code.toString().padStart(2, '0');
-                    let nom = deptNames[code] || 'Nom non défini';
+                    let nom = deptNames[code]?.name || 'Nom non défini';
                     let prix = prixData[code] ? prixData[code].toFixed(1) + " €/m²" : "Donnée non disponible";
+
+                    // Ajout du tooltip pour le survol
+                    layer.bindTooltip(
+                        `${nom}<br>${prix}`,
+                        {
+                            direction: 'top',
+                            offset: [0, -10],
+                            className: 'leaflet-tooltip-comparison' // Utiliser une classe spécifique pour éviter les conflits
+                        }
+                    );
+
+                    // Popup au clic
                     layer.bindPopup(`
                         <div class="custom-popup">
                             <h3>${nom}</h3>
@@ -1492,23 +2589,66 @@ function initComparison() {
                             <p><strong>Prix moyen :</strong> ${prix}</p>
                         </div>
                     `);
+
+                    // Gestion des événements de survol
+                    layer.on('mouseover', function() {
+                        if (layer !== searchHighlightedLayer) {
+                            layer.setStyle({
+                                weight: 3,
+                                color: '#000',
+                                fillOpacity: 1
+                            });
+                        }
+                        layer.openTooltip();
+                    });
+
+                    layer.on('mouseout', function() {
+                        if (layer !== searchHighlightedLayer) {
+                            layer.setStyle(layer.currentStyle || {
+                                weight: 1,
+                                color: 'black',
+                                fillOpacity: 0.7
+                            });
+                        }
+                        layer.closeTooltip();
+                    });
+
+                    // Gestion du clic pour garder la compatibilité avec le zoom
+                    layer.on('click', function(e) {
+                        L.DomEvent.stopPropagation(e);
+                        mapComparison.fitBounds(layer.getBounds(), { maxZoom: 9, animate: true });
+                        highlightComparisonDepartment(code);
+                    });
+
+                    // Réinitialisation du style après fermeture du popup
+                    layer.on('popupclose', function() {
+                        if (layer !== searchHighlightedLayer) {
+                            layer.setStyle(layer.currentStyle || {
+                                weight: 1,
+                                color: 'black',
+                                fillOpacity: 0.7
+                            });
+                        }
+                    });
                 }
             }).addTo(mapComparison);
 
-            if (highlightedDeptLayer) {
-                const code = highlightedDeptLayer.feature.properties.code.toString().padStart(2, '0');
-                highlightDepartment(code);
+            // Si un département est déjà mis en surbrillance, le réappliquer après la mise à jour de la couche
+            if (searchHighlightedLayer) {
+                const code = searchHighlightedLayer.feature.properties.code.toString().padStart(2, '0');
+                highlightComparisonDepartment(code);
             }
 
             const legend = L.control({ position: 'bottomright' });
             legend.onAdd = function() {
                 const div = L.DomUtil.create('div', 'info legend');
-                const grades = [1000, 1500, 2000, 2500, 3000, 3500, 4000];
+                const grades = [4000, 3500, 3000, 2500, 2000, 1500, 1000]; // Inverser l'ordre des seuils
                 let html = `<b>Prix du m² (${year})</b><br>`;
-                html += '<i style="background:#F5F5DC"></i> < 1000 €/m²<br>';
-                for (let i = 0; i < grades.length; i++) {
-                    html += `<i style="background:${getColor(grades[i] + 1)}"></i> ${grades[i]}${grades[i + 1] ? '–' + grades[i + 1] : '+'} €/m²<br>`;
+                html += '<i style="background:#800026"></i> > 4000 €/m²<br>';
+                for (let i = 0; i < grades.length - 1; i++) {
+                    html += `<i style="background:${getColor(grades[i] - 1)}"></i> ${grades[i + 1]}–${grades[i]} €/m²<br>`;
                 }
+                html += '<i style="background:#F5F5DC"></i> < 1000 €/m²<br>';
                 html += '<br><i style="background:#808080"></i> Données non disponibles<br>';
                 div.innerHTML = html;
                 return div;
@@ -1516,6 +2656,29 @@ function initComparison() {
             if (mapComparison._legend) mapComparison.removeControl(mapComparison._legend);
             mapComparison._legend = legend.addTo(mapComparison);
         }
+
+        // Reset View Control pour la carte de comparaison
+        const resetControlComparison = L.control({ position: 'topleft' });
+        resetControlComparison.onAdd = function() {
+            const div = L.DomUtil.create('div', 'leaflet-control-reset');
+            div.innerHTML = 'Réinitialiser la vue';
+            L.DomEvent.on(div, 'click', () => {
+                mapComparison.setView(initialViewComparison.center, initialViewComparison.zoom, { animate: true });
+                if (searchHighlightedLayer) {
+                    departementsLayer.eachLayer(layer => {
+                        const year = document.getElementById('yearSlider').value;
+                        const prixData = prixDataByYear[year] || {};
+                        const style = getComparisonLayerStyle(layer.feature, prixData);
+                        layer.setStyle(style);
+                        layer.currentStyle = style;
+                    });
+                    searchHighlightedLayer = null;
+                }
+            });
+            L.DomEvent.disableClickPropagation(div);
+            return div;
+        };
+        resetControlComparison.addTo(mapComparison);
 
         function updatePriceTrendChart() {
             const ctx = document.getElementById('priceTrendChart').getContext('2d');
@@ -1565,26 +2728,7 @@ function initComparison() {
             const feature = deptGeojsonData.features.find(f => f.properties.code.toString().padStart(2, '0') === code);
             if (feature) {
                 mapComparison.fitBounds(L.geoJSON(feature).getBounds(), { maxZoom: 9, animate: true });
-                highlightDepartment(code);
-            }
-        }
-
-        function highlightDepartment(code) {
-            if (highlightedDeptLayer) {
-                departementsLayer.resetStyle(highlightedDeptLayer);
-            }
-
-            const layer = Object.values(departementsLayer._layers).find(l => 
-                l.feature.properties.code.toString().padStart(2, '0') === code
-            );
-
-            if (layer) {
-                layer.setStyle({
-                    weight: 3,
-                    color: '#ffffff',
-                    opacity: 1
-                });
-                highlightedDeptLayer = layer;
+                highlightComparisonDepartment(code); // Met en surbrillance et ouvre le popup
             }
         }
 
@@ -1597,23 +2741,31 @@ function initComparison() {
         };
 
         window.filterDepartments = function() {
-            const input = document.getElementById('deptSearch').value.toLowerCase();
+            const input = document.getElementById('deptSearch').value;
+            const normalizedInput = normalizeString(input); // Normaliser l'entrée utilisateur
             const suggestions = document.getElementById('deptSuggestions');
             suggestions.innerHTML = '';
             if (input.length < 1) {
                 suggestions.style.display = 'none';
-                if (highlightedDeptLayer) {
-                    departementsLayer.resetStyle(highlightedDeptLayer);
-                    highlightedDeptLayer = null;
+                // Réinitialiser les styles si l'input est vide
+                if (searchHighlightedLayer) {
+                    departementsLayer.eachLayer(layer => {
+                        const year = document.getElementById('yearSlider').value;
+                        const prixData = prixDataByYear[year] || {};
+                        const style = getComparisonLayerStyle(layer.feature, prixData);
+                        layer.setStyle(style);
+                        layer.currentStyle = style;
+                    });
+                    searchHighlightedLayer = null;
                 }
                 return;
             }
-            const matches = Object.entries(deptNames).filter(([code, name]) =>
-                code.includes(input) || name.toLowerCase().includes(input)
+            const matches = Object.entries(deptNames).filter(([code, info]) =>
+                code.includes(input) || info.normalizedName.includes(normalizedInput) // Comparer avec la version normalisée
             );
-            matches.slice(0, 5).forEach(([code, name]) => {
+            matches.slice(0, 5).forEach(([code, info]) => {
                 const li = document.createElement('li');
-                li.textContent = `${name} (Dép. ${code})`;
+                li.textContent = `${info.name} (Dép. ${code})`;
                 li.onclick = () => {
                     zoomToDepartment(code);
                     document.getElementById('deptSearch').value = '';
@@ -1630,6 +2782,22 @@ function initComparison() {
     }).catch(error => {
         console.error('Erreur lors du chargement des données pour la comparaison :', error);
     });
+}
+function toggleFullscreen() {
+    const image = document.getElementById('infographieImage');
+    const button = document.getElementById('fullscreenBtn');
+
+    if (!image.classList.contains('fullscreen')) {
+        // Passer en mode plein écran
+        image.classList.add('fullscreen');
+        button.classList.add('fullscreen');
+        button.textContent = 'Réduire';
+    } else {
+        // Revenir au mode normal
+        image.classList.remove('fullscreen');
+        button.classList.remove('fullscreen');
+        button.textContent = 'Plein écran';
+    }
 }
 </script>
 </body>
